@@ -2,7 +2,9 @@
 
 /* Package info */
 #define PACKAGE "@PROJECT_NAME@"
+#define PACKAGE_NAME "@PROJECT_NAME@"
 #define PACKAGE_VERSION "@PROJECT_VERSION@"
+#define PACKAGE_STRING "@PROJECT_NAME@ @PROJECT_VERSION@"
 #define VERSION "@PROJECT_VERSION@"
 
 /* Header file checks */
