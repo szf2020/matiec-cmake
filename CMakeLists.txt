@@ -67,6 +67,53 @@ if(GIT_FOUND)
     endif()
 endif()
 
+# Platform feature detection
+include(CheckIncludeFile)
+include(CheckFunctionExists)
+include(CheckTypeSize)
+
+check_include_file(float.h HAVE_FLOAT_H)
+check_include_file(limits.h HAVE_LIMITS_H)
+check_include_file(stdint.h HAVE_STDINT_H)
+check_include_file(stdlib.h HAVE_STDLIB_H)
+check_include_file(string.h HAVE_STRING_H)
+check_include_file(strings.h HAVE_STRINGS_H)
+check_include_file(sys/timeb.h HAVE_SYS_TIMEB_H)
+check_include_file(unistd.h HAVE_UNISTD_H)
+check_include_file(stdbool.h HAVE_STDBOOL_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
+
+check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+check_function_exists(memset HAVE_MEMSET)
+check_function_exists(pow HAVE_POW)
+check_function_exists(strcasecmp HAVE_STRCASECMP)
+check_function_exists(strdup HAVE_STRDUP)
+check_function_exists(strtoul HAVE_STRTOUL)
+check_function_exists(strtoull HAVE_STRTOULL)
+check_function_exists(malloc HAVE_MALLOC)
+check_function_exists(realloc HAVE_REALLOC)
+check_function_exists(mktime HAVE_MKTIME)
+
+# Type checks
+check_type_size(int8_t HAVE_INT8_T)
+check_type_size(int16_t HAVE_INT16_T)
+check_type_size(int32_t HAVE_INT32_T)
+check_type_size(int64_t HAVE_INT64_T)
+check_type_size(uint8_t HAVE_UINT8_T)
+check_type_size(uint16_t HAVE_UINT16_T)
+check_type_size(uint32_t HAVE_UINT32_T)
+check_type_size(uint64_t HAVE_UINT64_T)
+
+# Generate config.h
+configure_file(
+    ${CMAKE_SOURCE_DIR}/config/config.h.in
+    ${CMAKE_BINARY_DIR}/config/config.h
+    @ONLY
+)
+
+# Include generated config directory
+include_directories(${CMAKE_BINARY_DIR})
+
 # Add subdirectories
 add_subdirectory(absyntax)
 add_subdirectory(absyntax_utils)

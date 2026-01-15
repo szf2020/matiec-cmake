@@ -65,5 +65,6 @@ iec2iec
 stage1_2/iec_bison.cc
 stage1_2/iec_bison.h*
 stage1_2/iec_flex.cc
-config/config.h*
+config/config.h
+!config/config.h.in
 test/**
