@@ -32,25 +32,25 @@ This package includes native binaries for:
   </metadata>
   <files>
     <!-- Windows binaries -->
-    <file src="tools\win-x64\iec2c.exe" target="tools\win-x64\" />
-    <file src="tools\win-x64\iec2iec.exe" target="tools\win-x64\" />
+    <file src="tools\win-x64\iec2c.exe" target="tools\win-x64\iec2c.exe" />
+    <file src="tools\win-x64\iec2iec.exe" target="tools\win-x64\iec2iec.exe" />
 
     <!-- Linux binaries -->
-    <file src="tools\linux-x64\iec2c" target="tools\linux-x64\" />
-    <file src="tools\linux-x64\iec2iec" target="tools\linux-x64\" />
+    <file src="tools\linux-x64\iec2c" target="tools\linux-x64\iec2c" />
+    <file src="tools\linux-x64\iec2iec" target="tools\linux-x64\iec2iec" />
 
     <!-- macOS binaries -->
-    <file src="tools\osx-x64\iec2c" target="tools\osx-x64\" />
-    <file src="tools\osx-x64\iec2iec" target="tools\osx-x64\" />
+    <file src="tools\osx-x64\iec2c" target="tools\osx-x64\iec2c" />
+    <file src="tools\osx-x64\iec2iec" target="tools\osx-x64\iec2iec" />
 
     <!-- Standard library files (shared across platforms) -->
     <file src="lib\**\*" target="lib\" />
 
     <!-- MSBuild integration -->
-    <file src="build\matiec.props" target="build\" />
-    <file src="build\matiec.targets" target="build\" />
+    <file src="build\matiec.props" target="build\matiec.props" />
+    <file src="build\matiec.targets" target="build\matiec.targets" />
 
     <!-- Documentation -->
-    <file src="docs\README.md" target="docs\" />
+    <file src="docs\README.md" target="docs\README.md" />
   </files>
 </package>
