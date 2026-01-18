@@ -72,7 +72,14 @@ jobs:
           echo "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Configure CMake
-        run: cmake -B build -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DMATIEC_BUILD_TESTS=ON
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            # Use Visual Studio generator on Windows for proper MSVC builds
+            cmake -B build -G "Visual Studio 17 2022" -A x64 -DMATIEC_BUILD_TESTS=ON
+          else
+            cmake -B build -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DMATIEC_BUILD_TESTS=ON
+          fi
 
       - name: Build
         run: cmake --build build --config ${{ env.BUILD_TYPE }}

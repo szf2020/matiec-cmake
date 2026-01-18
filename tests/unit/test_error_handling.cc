@@ -70,7 +70,11 @@ TEST_F(TestUtilsTest, ReadNonexistentFile) {
     EXPECT_FALSE(result.has_value());
 }
 
-TEST(TestUtilsTest, TempDirRAII) {
+// =============================================================================
+// Standalone tests (no fixture needed)
+// =============================================================================
+
+TEST(TestUtilsStandaloneTest, TempDirRAII) {
     std::filesystem::path captured_path;
     {
         matiec::test::TempDir temp;
@@ -81,14 +85,14 @@ TEST(TestUtilsTest, TempDirRAII) {
     EXPECT_FALSE(std::filesystem::exists(captured_path));
 }
 
-TEST(TestUtilsTest, MakeSimpleProgram) {
+TEST(TestUtilsStandaloneTest, MakeSimpleProgram) {
     auto program = matiec::test::makeSimpleProgram("test_prog", "temp := 42;");
     EXPECT_THAT(program, ::testing::HasSubstr("PROGRAM test_prog"));
     EXPECT_THAT(program, ::testing::HasSubstr("temp := 42;"));
     EXPECT_THAT(program, ::testing::HasSubstr("END_PROGRAM"));
 }
 
-TEST(TestUtilsTest, MakeFunctionBlock) {
+TEST(TestUtilsStandaloneTest, MakeFunctionBlock) {
     auto fb = matiec::test::makeFunctionBlock("test_fb", "out1 := in1 * 2;");
     EXPECT_THAT(fb, ::testing::HasSubstr("FUNCTION_BLOCK test_fb"));
     EXPECT_THAT(fb, ::testing::HasSubstr("VAR_INPUT"));
@@ -97,13 +101,13 @@ TEST(TestUtilsTest, MakeFunctionBlock) {
     EXPECT_THAT(fb, ::testing::HasSubstr("END_FUNCTION_BLOCK"));
 }
 
-TEST(TestUtilsTest, GetProjectRoot) {
+TEST(TestUtilsStandaloneTest, GetProjectRoot) {
     auto root = matiec::test::getProjectRoot();
     // Project root should contain CMakeLists.txt
     EXPECT_TRUE(std::filesystem::exists(root / "CMakeLists.txt"));
 }
 
-TEST(TestUtilsTest, GetLibDir) {
+TEST(TestUtilsStandaloneTest, GetLibDir) {
     auto lib_dir = matiec::test::getLibDir();
     // lib directory should exist and contain IEC standard library files
     if (std::filesystem::exists(lib_dir)) {

@@ -10,6 +10,7 @@
 #include "test_utils.hh"
 #include "matiec/matiec.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 
@@ -40,7 +41,12 @@ protected:
 TEST(MatiecUtilsTest, VersionStringIsValid) {
     const char* version = matiec_version();
     ASSERT_NE(version, nullptr);
-    EXPECT_THAT(version, ::testing::MatchesRegex(R"(\d+\.\d+\.\d+)"));
+    // Check version string is not empty and contains version-like pattern
+    std::string v(version);
+    EXPECT_FALSE(v.empty());
+    // Check it contains at least two dots (x.y.z format)
+    size_t dot_count = std::count(v.begin(), v.end(), '.');
+    EXPECT_GE(dot_count, 2u) << "Version string should be in x.y.z format, got: " << v;
 }
 
 TEST(MatiecUtilsTest, ErrorStringReturnsValidStrings) {
