@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-project(matiec VERSION 0.1 LANGUAGES CXX C)
+project(matiec VERSION 0.1.0 LANGUAGES CXX C)
+
+# Options
+option(MATIEC_BUILD_SHARED "Build shared library" ON)
+option(MATIEC_BUILD_STATIC "Build static library" ON)
+option(MATIEC_BUILD_TOOLS "Build command-line tools (iec2c, iec2iec)" ON)
+option(MATIEC_INSTALL "Generate install targets" ON)
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -7,6 +13,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Export compile_commands.json for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Position independent code (required for shared library)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # macOS Homebrew paths for flex/bison
 if(APPLE)
@@ -75,6 +84,8 @@ endif()
 include(CheckIncludeFile)
 include(CheckFunctionExists)
 include(CheckTypeSize)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 check_include_file(float.h HAVE_FLOAT_H)
 check_include_file(limits.h HAVE_LIMITS_H)
@@ -115,52 +126,215 @@ configure_file(
     @ONLY
 )
 
-# Include generated config directory
+# Include directories
 include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Add subdirectories
+# Add subdirectories for internal libraries
 add_subdirectory(absyntax)
 add_subdirectory(absyntax_utils)
 add_subdirectory(stage1_2)
 add_subdirectory(stage3)
 add_subdirectory(stage4)
 
-# Executable: iec2c (IEC 61131-3 to C)
-add_executable(iec2c main.cc)
-target_include_directories(iec2c PRIVATE ${CMAKE_SOURCE_DIR})
-target_link_libraries(iec2c PRIVATE
+# ==============================================================================
+# Library: libmatiec
+# ==============================================================================
+
+# Collect all internal library sources for the unified library
+set(MATIEC_CORE_LIBS
     stage1_2
     stage3
     stage4_c
-    absyntax
-    absyntax_utils
-)
-
-# Executable: iec2iec (IEC 61131-3 normalizer)
-add_executable(iec2iec main.cc)
-target_include_directories(iec2iec PRIVATE ${CMAKE_SOURCE_DIR})
-target_link_libraries(iec2iec PRIVATE
-    stage1_2
-    stage3
     stage4_iec
     absyntax
     absyntax_utils
 )
 
-# Installation rules
-install(TARGETS iec2c iec2iec RUNTIME DESTINATION bin)
-install(DIRECTORY lib/ DESTINATION lib
-    FILES_MATCHING
-    PATTERN "*.txt"
-    PATTERN "*.h"
+# Library source files
+set(MATIEC_LIB_SOURCES
+    src/matiec_lib.cc
+    main.cc
 )
 
+# Static library
+if(MATIEC_BUILD_STATIC)
+    add_library(matiec_static STATIC ${MATIEC_LIB_SOURCES})
+    target_include_directories(matiec_static
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}
+            ${CMAKE_BINARY_DIR}
+    )
+    target_link_libraries(matiec_static PRIVATE ${MATIEC_CORE_LIBS})
+    set_target_properties(matiec_static PROPERTIES
+        OUTPUT_NAME matiec
+        ARCHIVE_OUTPUT_NAME matiec
+    )
+
+    # Alias for use in subdirectory builds
+    add_library(matiec::static ALIAS matiec_static)
+endif()
+
+# Shared library
+if(MATIEC_BUILD_SHARED)
+    add_library(matiec_shared SHARED ${MATIEC_LIB_SOURCES})
+    target_compile_definitions(matiec_shared PRIVATE MATIEC_BUILDING_DLL)
+    target_include_directories(matiec_shared
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}
+            ${CMAKE_BINARY_DIR}
+    )
+    target_link_libraries(matiec_shared PRIVATE ${MATIEC_CORE_LIBS})
+    set_target_properties(matiec_shared PROPERTIES
+        OUTPUT_NAME matiec
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+    )
+
+    # Alias for use in subdirectory builds
+    add_library(matiec::shared ALIAS matiec_shared)
+endif()
+
+# Default library alias (prefer shared if available)
+if(MATIEC_BUILD_SHARED)
+    add_library(matiec::matiec ALIAS matiec_shared)
+elseif(MATIEC_BUILD_STATIC)
+    add_library(matiec::matiec ALIAS matiec_static)
+endif()
+
+# ==============================================================================
+# Command-line tools
+# ==============================================================================
+
+if(MATIEC_BUILD_TOOLS)
+    # Executable: iec2c (IEC 61131-3 to C)
+    add_executable(iec2c main.cc)
+    target_include_directories(iec2c PRIVATE ${CMAKE_SOURCE_DIR})
+    target_link_libraries(iec2c PRIVATE
+        stage1_2
+        stage3
+        stage4_c
+        absyntax
+        absyntax_utils
+    )
+
+    # Executable: iec2iec (IEC 61131-3 normalizer)
+    add_executable(iec2iec main.cc)
+    target_include_directories(iec2iec PRIVATE ${CMAKE_SOURCE_DIR})
+    target_link_libraries(iec2iec PRIVATE
+        stage1_2
+        stage3
+        stage4_iec
+        absyntax
+        absyntax_utils
+    )
+endif()
+
+# ==============================================================================
+# Export targets for external usage (CPM, FetchContent, add_subdirectory)
+# ==============================================================================
+
+if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    # Being used as a subdirectory - export variables to parent scope
+    set(MATIEC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib PARENT_SCOPE)
+    set(MATIEC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
+
+    if(MATIEC_BUILD_TOOLS)
+        set(MATIEC_IEC2C_EXECUTABLE $<TARGET_FILE:iec2c> PARENT_SCOPE)
+        set(MATIEC_IEC2IEC_EXECUTABLE $<TARGET_FILE:iec2iec> PARENT_SCOPE)
+    endif()
+endif()
+
+# ==============================================================================
+# Installation
+# ==============================================================================
+
+if(MATIEC_INSTALL)
+    # Install executables
+    if(MATIEC_BUILD_TOOLS)
+        install(TARGETS iec2c iec2iec
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+    endif()
+
+    # Install libraries
+    set(INSTALL_TARGETS)
+    if(MATIEC_BUILD_STATIC)
+        list(APPEND INSTALL_TARGETS matiec_static)
+    endif()
+    if(MATIEC_BUILD_SHARED)
+        list(APPEND INSTALL_TARGETS matiec_shared)
+    endif()
+
+    if(INSTALL_TARGETS)
+        install(TARGETS ${INSTALL_TARGETS}
+            EXPORT matiecTargets
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+    endif()
+
+    # Install headers
+    install(DIRECTORY include/matiec
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+    # Install IEC standard library
+    install(DIRECTORY lib/
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/matiec/lib
+        FILES_MATCHING
+        PATTERN "*.txt"
+        PATTERN "*.h"
+    )
+
+    # Install CMake config files
+    install(EXPORT matiecTargets
+        FILE matiecTargets.cmake
+        NAMESPACE matiec::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/matiec
+    )
+
+    # Generate and install config file
+    configure_package_config_file(
+        ${CMAKE_SOURCE_DIR}/cmake/matiecConfig.cmake.in
+        ${CMAKE_BINARY_DIR}/matiecConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/matiec
+    )
+
+    # Generate and install version file
+    write_basic_package_version_file(
+        ${CMAKE_BINARY_DIR}/matiecConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    install(FILES
+        ${CMAKE_BINARY_DIR}/matiecConfig.cmake
+        ${CMAKE_BINARY_DIR}/matiecConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/matiec
+    )
+endif()
+
+# ==============================================================================
 # Print configuration summary
+# ==============================================================================
+
 message(STATUS "")
-message(STATUS "matiec configuration:")
+message(STATUS "matiec ${PROJECT_VERSION} configuration:")
 message(STATUS "  C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "  Bison: ${BISON_EXECUTABLE}")
 message(STATUS "  Flex: ${FLEX_EXECUTABLE}")
+message(STATUS "  Build shared library: ${MATIEC_BUILD_SHARED}")
+message(STATUS "  Build static library: ${MATIEC_BUILD_STATIC}")
+message(STATUS "  Build tools: ${MATIEC_BUILD_TOOLS}")
 if(GIT_VERSION)
     message(STATUS "  Git version: ${GIT_VERSION}")
 endif()

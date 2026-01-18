@@ -1,0 +1,52 @@
+@PACKAGE_INIT@
+
+# matiec CMake configuration file
+#
+# This file is used by find_package(matiec) to locate the matiec library
+# and set up the necessary include directories and link targets.
+#
+# Usage:
+#   find_package(matiec REQUIRED)
+#   target_link_libraries(my_app PRIVATE matiec::matiec)
+#
+# Available targets:
+#   matiec::matiec  - Default library (shared if available, otherwise static)
+#   matiec::shared  - Shared library (if built)
+#   matiec::static  - Static library (if built)
+#
+# Variables set:
+#   matiec_FOUND        - TRUE if matiec was found
+#   MATIEC_VERSION      - Version string
+#   MATIEC_INCLUDE_DIRS - Include directories
+#   MATIEC_LIBRARIES    - Libraries to link
+#   MATIEC_LIB_DIR      - Path to IEC standard library files
+
+include(CMakeFindDependencyMacro)
+
+# Include the exported targets
+include("${CMAKE_CURRENT_LIST_DIR}/matiecTargets.cmake")
+
+# Set version
+set(MATIEC_VERSION "@PROJECT_VERSION@")
+
+# Set include directories
+set_and_check(MATIEC_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+
+# Set IEC standard library path
+set_and_check(MATIEC_LIB_DIR "@PACKAGE_CMAKE_INSTALL_DATADIR@/matiec/lib")
+
+# Set libraries (for compatibility)
+if(TARGET matiec::shared)
+    set(MATIEC_LIBRARIES matiec::shared)
+elseif(TARGET matiec::static)
+    set(MATIEC_LIBRARIES matiec::static)
+endif()
+
+check_required_components(matiec)
+
+# Print status message
+if(NOT matiec_FIND_QUIETLY)
+    message(STATUS "Found matiec: ${MATIEC_VERSION}")
+    message(STATUS "  Include: ${MATIEC_INCLUDE_DIRS}")
+    message(STATUS "  IEC Lib: ${MATIEC_LIB_DIR}")
+endif()

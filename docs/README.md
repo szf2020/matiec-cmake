@@ -1,72 +1,32 @@
-# matiec - IEC 61131-3 Compiler
+# Documentation
 
-matiec is an open-source compiler for the IEC 61131-3 programming languages used in Programmable Logic Controllers (PLCs).
+This directory contains documentation for the matiec project.
 
-## Included Tools
+## Files
 
-### iec2c
-Compiles IEC 61131-3 source code to C code.
+| File | Description |
+|------|-------------|
+| [INTEGRATION.md](INTEGRATION.md) | Guide for integrating matiec into external projects (CPM, vcpkg, FetchContent) |
+| [legacy/ARCHITECTURE.txt](legacy/ARCHITECTURE.txt) | Original detailed architecture documentation (compiler internals) |
+| [legacy/BUILD_AUTOTOOLS.txt](legacy/BUILD_AUTOTOOLS.txt) | Legacy Autotools build instructions (deprecated) |
 
-```bash
-# Windows
-tools/win-x64/iec2c.exe -I lib input.st -T output_dir
+## Quick Links
 
-# Linux
-tools/linux-x64/iec2c -I lib input.st -T output_dir
+- **Main README**: [../README.md](../README.md)
+- **License**: [../COPYING](../COPYING)
+- **Standard Library**: [../lib/](../lib/)
 
-# macOS
-tools/osx-x64/iec2c -I lib input.st -T output_dir
-```
+## Building
 
-### iec2iec
-Normalizes and pretty-prints IEC 61131-3 source code.
+See the main [README.md](../README.md) for CMake build instructions.
 
-```bash
-# Windows
-tools/win-x64/iec2iec.exe input.st
+## Architecture Overview
 
-# Linux
-tools/linux-x64/iec2iec input.st
+The matiec compiler works in 4 stages:
 
-# macOS
-tools/osx-x64/iec2iec input.st
-```
+1. **Stage 1 (Lexer)**: Tokenizes IEC 61131-3 source code using Flex
+2. **Stage 2 (Parser)**: Builds abstract syntax tree using Bison
+3. **Stage 3 (Semantics)**: Type checking and flow control analysis
+4. **Stage 4 (Code Gen)**: Generates C code (iec2c) or normalized IEC code (iec2iec)
 
-## Supported Languages
-
-- **ST** (Structured Text)
-- **IL** (Instruction List)
-- **SFC** (Sequential Function Chart)
-- **FBD** (Function Block Diagram) - partial
-- **LD** (Ladder Diagram) - partial
-
-## Command Line Options
-
-| Option | Description |
-|--------|-------------|
-| `-h` | Display help |
-| `-v` | Display version |
-| `-f` | Display full token location |
-| `-p` | Allow use of forward references |
-| `-l` | Use relaxed datatype equivalence model |
-| `-s` | Support SAFE datatypes (PLCopen Safety) |
-| `-n` | Allow nested comments |
-| `-r` | Support REF_TO, REF, ^, and NULL |
-| `-I <dir>` | Include directory for libraries |
-| `-T <dir>` | Target directory for output |
-
-## Standard Library
-
-The `lib/` directory contains IEC 61131-3 standard library definitions:
-- Standard functions (arithmetic, comparison, etc.)
-- Standard function blocks (timers, counters, etc.)
-- Type definitions
-
-## License
-
-GPL-3.0 - See LICENSE file for details.
-
-## Links
-
-- [GitHub Repository](https://github.com/your-org/matiec)
-- [IEC 61131-3 Standard](https://www.plcopen.org/)
+For detailed architecture documentation, see [legacy/ARCHITECTURE.txt](legacy/ARCHITECTURE.txt).

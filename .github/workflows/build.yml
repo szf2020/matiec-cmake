@@ -17,15 +17,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux x64
           - os: ubuntu-latest
             name: linux-x64
             cmake_generator: Ninja
+            arch: x64
+          # Linux ARM64
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
+            cmake_generator: Ninja
+            arch: arm64
+          # macOS x64 (Intel)
+          - os: macos-13
+            name: macos-x64
+            cmake_generator: Ninja
+            arch: x64
+          # macOS ARM64 (Apple Silicon)
           - os: macos-latest
-            name: osx-x64
+            name: macos-arm64
             cmake_generator: Ninja
+            arch: arm64
+          # Windows x64
           - os: windows-latest
-            name: win-x64
+            name: windows-x64
             cmake_generator: Ninja
+            arch: x64
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.name }})
@@ -56,8 +72,7 @@ jobs:
           echo "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Configure CMake
-        run: |
-          cmake -B build -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        run: cmake -B build -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
       - name: Build
         run: cmake --build build --config ${{ env.BUILD_TYPE }}
@@ -66,30 +81,59 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            ./build/iec2c.exe --help || true
-            ./build/iec2iec.exe --help || true
+            ./build/iec2c.exe -v || true
+            ./build/iec2iec.exe -v || true
           else
-            ./build/iec2c --help || true
-            ./build/iec2iec --help || true
+            ./build/iec2c -v || true
+            ./build/iec2iec -v || true
           fi
 
-      - name: Prepare artifacts
+      - name: Prepare distribution package
         shell: bash
         run: |
-          mkdir -p artifacts/${{ matrix.name }}
+          DIST_DIR="matiec-${{ matrix.name }}"
+          mkdir -p "$DIST_DIR/bin"
+          mkdir -p "$DIST_DIR/lib"
+
+          # Copy executables
           if [ "$RUNNER_OS" == "Windows" ]; then
-            cp build/iec2c.exe artifacts/${{ matrix.name }}/
-            cp build/iec2iec.exe artifacts/${{ matrix.name }}/
+            cp build/iec2c.exe "$DIST_DIR/bin/"
+            cp build/iec2iec.exe "$DIST_DIR/bin/"
           else
-            cp build/iec2c artifacts/${{ matrix.name }}/
-            cp build/iec2iec artifacts/${{ matrix.name }}/
+            cp build/iec2c "$DIST_DIR/bin/"
+            cp build/iec2iec "$DIST_DIR/bin/"
+          fi
+
+          # Copy standard library
+          cp -r lib/* "$DIST_DIR/lib/"
+
+          # Copy documentation
+          cp README.md "$DIST_DIR/"
+          cp COPYING "$DIST_DIR/"
+
+          # Create usage script (Unix)
+          if [ "$RUNNER_OS" != "Windows" ]; then
+            cat > "$DIST_DIR/iec2c.sh" << 'EOF'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          "$SCRIPT_DIR/bin/iec2c" -I "$SCRIPT_DIR/lib" "$@"
+          EOF
+            chmod +x "$DIST_DIR/iec2c.sh"
+          fi
+
+          # Create usage script (Windows)
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cat > "$DIST_DIR/iec2c.cmd" << 'EOF'
+          @echo off
+          "%~dp0bin\iec2c.exe" -I "%~dp0lib" %*
+          EOF
           fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: matiec-${{ matrix.name }}
-          path: artifacts/${{ matrix.name }}
+          path: matiec-${{ matrix.name }}
           retention-days: 30
 
   # Create NuGet package
@@ -116,20 +160,21 @@ jobs:
           # Create package directories
           New-Item -ItemType Directory -Force -Path "package/tools/win-x64"
           New-Item -ItemType Directory -Force -Path "package/tools/linux-x64"
+          New-Item -ItemType Directory -Force -Path "package/tools/linux-arm64"
           New-Item -ItemType Directory -Force -Path "package/tools/osx-x64"
+          New-Item -ItemType Directory -Force -Path "package/tools/osx-arm64"
           New-Item -ItemType Directory -Force -Path "package/lib"
           New-Item -ItemType Directory -Force -Path "package/build"
           New-Item -ItemType Directory -Force -Path "package/docs"
 
-          # Copy binaries only (no lib subdirectories)
-          Copy-Item -Path "artifacts/matiec-win-x64/iec2c.exe" -Destination "package/tools/win-x64/"
-          Copy-Item -Path "artifacts/matiec-win-x64/iec2iec.exe" -Destination "package/tools/win-x64/"
-          Copy-Item -Path "artifacts/matiec-linux-x64/iec2c" -Destination "package/tools/linux-x64/"
-          Copy-Item -Path "artifacts/matiec-linux-x64/iec2iec" -Destination "package/tools/linux-x64/"
-          Copy-Item -Path "artifacts/matiec-osx-x64/iec2c" -Destination "package/tools/osx-x64/"
-          Copy-Item -Path "artifacts/matiec-osx-x64/iec2iec" -Destination "package/tools/osx-x64/"
+          # Copy binaries
+          Copy-Item -Path "artifacts/matiec-windows-x64/bin/*" -Destination "package/tools/win-x64/"
+          Copy-Item -Path "artifacts/matiec-linux-x64/bin/*" -Destination "package/tools/linux-x64/"
+          Copy-Item -Path "artifacts/matiec-linux-arm64/bin/*" -Destination "package/tools/linux-arm64/"
+          Copy-Item -Path "artifacts/matiec-macos-x64/bin/*" -Destination "package/tools/osx-x64/"
+          Copy-Item -Path "artifacts/matiec-macos-arm64/bin/*" -Destination "package/tools/osx-arm64/"
 
-          # Copy lib folder to package root (shared across platforms)
+          # Copy lib folder
           Copy-Item -Path "lib/*" -Destination "package/lib/" -Recurse
 
           # Copy MSBuild integration files
@@ -137,7 +182,7 @@ jobs:
           Copy-Item -Path "build/matiec.targets" -Destination "package/build/"
 
           # Copy documentation
-          Copy-Item -Path "docs/README.md" -Destination "package/docs/"
+          Copy-Item -Path "README.md" -Destination "package/docs/"
 
       - name: Get version
         id: version
@@ -164,7 +209,7 @@ jobs:
           retention-days: 30
 
   # Publish to NuGet.org on tag
-  publish:
+  publish-nuget:
     needs: nuget
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/v')
@@ -194,6 +239,13 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -202,21 +254,108 @@ jobs:
       - name: Create release archives
         run: |
           cd artifacts
+
+          # Create archives for each platform
           for dir in matiec-*/; do
             name="${dir%/}"
+            echo "Creating archive for $name..."
+
+            # Create zip
             zip -r "../${name}.zip" "$dir"
+
+            # Create tar.gz
             tar -czvf "../${name}.tar.gz" "$dir"
           done
+
           cd ..
+
+          # List created archives
+          echo "=== Created archives ==="
           ls -la *.zip *.tar.gz
 
+      - name: Generate checksums
+        run: |
+          echo "# SHA256 Checksums" > checksums.txt
+          echo "" >> checksums.txt
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> checksums.txt
+          echo "Version: ${{ steps.version.outputs.VERSION }}" >> checksums.txt
+          echo "" >> checksums.txt
+
+          for file in *.zip *.tar.gz; do
+            sha256sum "$file" >> checksums.txt
+          done
+
+          # Also add NuGet package checksum
+          if [ -f "artifacts/nuget-package/"*.nupkg ]; then
+            sha256sum artifacts/nuget-package/*.nupkg >> checksums.txt
+          fi
+
+          echo ""
+          echo "=== Checksums ==="
+          cat checksums.txt
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
+          name: matiec v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## matiec v${{ steps.version.outputs.VERSION }}
+
+            IEC 61131-3 compiler - converts PLC code (ST/IL/SFC) to ANSI C.
+
+            ### Downloads
+
+            | Platform | Architecture | Archive |
+            |----------|--------------|---------|
+            | Windows | x64 | `matiec-windows-x64.zip` |
+            | Linux | x64 | `matiec-linux-x64.tar.gz` |
+            | Linux | ARM64 | `matiec-linux-arm64.tar.gz` |
+            | macOS | x64 (Intel) | `matiec-macos-x64.tar.gz` |
+            | macOS | ARM64 (Apple Silicon) | `matiec-macos-arm64.tar.gz` |
+            | NuGet | All platforms | `matiec.${{ steps.version.outputs.VERSION }}.nupkg` |
+
+            ### Quick Start
+
+            ```bash
+            # Extract and run
+            tar -xzf matiec-linux-x64.tar.gz
+            cd matiec-linux-x64
+            ./bin/iec2c -I lib -T output/ your_program.st
+
+            # Or use the convenience script
+            ./iec2c.sh -T output/ your_program.st
+            ```
+
+            ### Package Contents
+
+            Each archive contains:
+            - `bin/` - Executables (iec2c, iec2iec)
+            - `lib/` - IEC 61131-3 standard library
+            - `README.md` - Documentation
+            - `COPYING` - License (GPL-3.0)
+
+            ### Installation via Package Managers
+
+            **NuGet:**
+            ```
+            nuget install matiec
+            ```
+
+            **CPM.cmake:**
+            ```cmake
+            CPMAddPackage("gh:lusipad/matiec-cmake@v${{ steps.version.outputs.VERSION }}")
+            ```
+
+            See [INTEGRATION.md](https://github.com/lusipad/matiec-cmake/blob/master/docs/INTEGRATION.md) for more options.
+
+            ---
+
+            **Full Changelog**: https://github.com/lusipad/matiec-cmake/compare/...v${{ steps.version.outputs.VERSION }}
           files: |
             *.zip
             *.tar.gz
+            checksums.txt
             artifacts/nuget-package/*.nupkg
           generate_release_notes: true
           draft: false
-          prerelease: ${{ contains(github.ref, '-') }}
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
