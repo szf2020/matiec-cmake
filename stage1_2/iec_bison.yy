@@ -4932,7 +4932,7 @@ standard_function_name_simpleop_clashes:
 /* standard_function_name_NOT_clashes is only used in function invocations, so we use the poutype_identifier_c class! */
 standard_function_name_NOT_clashes:
   NOT
-	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("NOT"), locloc(@$));}
+	{$$ = new poutype_identifier_c("NOT", locloc(@$));}
 ;
 
 /* Add here any other IL simple operators that collide
@@ -4949,20 +4949,20 @@ standard_function_name_simpleop_only_clashes:
 
 /* standard_function_name_expression_clashes is only used in function invocations, so we use the poutype_identifier_c class! */
 standard_function_name_expression_clashes:
-  AND	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("AND"), locloc(@$));}
-| OR	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("OR"), locloc(@$));}
-| XOR	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("XOR"), locloc(@$));}
-| ADD	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("ADD"), locloc(@$));}
-| SUB	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("SUB"), locloc(@$));}
-| MUL	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("MUL"), locloc(@$));}
-| DIV	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("DIV"), locloc(@$));}
-| MOD	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("MOD"), locloc(@$));}
-| GT	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("GT"), locloc(@$));}
-| GE	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("GE"), locloc(@$));}
-| EQ	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("EQ"), locloc(@$));}
-| LT	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("LT"), locloc(@$));}
-| LE	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("LE"), locloc(@$));}
-| NE	{$$ = new poutype_identifier_c(matiec::cstr_pool_strdup("NE"), locloc(@$));}
+  AND	{$$ = new poutype_identifier_c("AND", locloc(@$));}
+| OR	{$$ = new poutype_identifier_c("OR", locloc(@$));}
+| XOR	{$$ = new poutype_identifier_c("XOR", locloc(@$));}
+| ADD	{$$ = new poutype_identifier_c("ADD", locloc(@$));}
+| SUB	{$$ = new poutype_identifier_c("SUB", locloc(@$));}
+| MUL	{$$ = new poutype_identifier_c("MUL", locloc(@$));}
+| DIV	{$$ = new poutype_identifier_c("DIV", locloc(@$));}
+| MOD	{$$ = new poutype_identifier_c("MOD", locloc(@$));}
+| GT	{$$ = new poutype_identifier_c("GT", locloc(@$));}
+| GE	{$$ = new poutype_identifier_c("GE", locloc(@$));}
+| EQ	{$$ = new poutype_identifier_c("EQ", locloc(@$));}
+| LT	{$$ = new poutype_identifier_c("LT", locloc(@$));}
+| LE	{$$ = new poutype_identifier_c("LE", locloc(@$));}
+| NE	{$$ = new poutype_identifier_c("NE", locloc(@$));}
 /*
   AND_operator	{$$ = il_operator_c_2_poutype_identifier_c($1);}
 //NOTE: AND2 (corresponding to the source code string '&') does not clash
@@ -5668,20 +5668,20 @@ action_qualifier:
 ;
 
 qualifier:
-  N		{$$ = new qualifier_c(matiec::cstr_pool_strdup("N"), locloc(@$));}
-| R		{$$ = new qualifier_c(matiec::cstr_pool_strdup("R"), locloc(@$));}
-| S		{$$ = new qualifier_c(matiec::cstr_pool_strdup("S"), locloc(@$));}
-| P		{$$ = new qualifier_c(matiec::cstr_pool_strdup("P"), locloc(@$));}
-| P0	{$$ = new qualifier_c(matiec::cstr_pool_strdup("P0"), locloc(@$));}
-| P1	{$$ = new qualifier_c(matiec::cstr_pool_strdup("P1"), locloc(@$));}
+  N		{$$ = new qualifier_c("N", locloc(@$));}
+| R		{$$ = new qualifier_c("R", locloc(@$));}
+| S		{$$ = new qualifier_c("S", locloc(@$));}
+| P		{$$ = new qualifier_c("P", locloc(@$));}
+| P0	{$$ = new qualifier_c("P0", locloc(@$));}
+| P1	{$$ = new qualifier_c("P1", locloc(@$));}
 ;
 
 timed_qualifier:
-  L		{$$ = new timed_qualifier_c(matiec::cstr_pool_strdup("L"), locloc(@$));}
-| D		{$$ = new timed_qualifier_c(matiec::cstr_pool_strdup("D"), locloc(@$));}
-| SD		{$$ = new timed_qualifier_c(matiec::cstr_pool_strdup("SD"), locloc(@$));}
-| DS		{$$ = new timed_qualifier_c(matiec::cstr_pool_strdup("DS"), locloc(@$));}
-| SL		{$$ = new timed_qualifier_c(matiec::cstr_pool_strdup("SL"), locloc(@$));}
+  L		{$$ = new timed_qualifier_c("L", locloc(@$));}
+| D		{$$ = new timed_qualifier_c("D", locloc(@$));}
+| SD		{$$ = new timed_qualifier_c("SD", locloc(@$));}
+| DS		{$$ = new timed_qualifier_c("DS", locloc(@$));}
+| SL		{$$ = new timed_qualifier_c("SL", locloc(@$));}
 ;
 
 /* NOTE: A step_name may be used as a structured vaqriable, in order to access the status bit (e.g. Step1.X) 
@@ -8638,9 +8638,10 @@ identifier_c *token_2_identifier_c(char *value, ) {
  */
 poutype_identifier_c *il_operator_c_2_poutype_identifier_c(symbol_c *il_operator) {
   identifier_c         *    id = il_operator_c_2_identifier_c(il_operator);
-  poutype_identifier_c *pou_id = new poutype_identifier_c(matiec::cstr_pool_strdup(id->value));
+  poutype_identifier_c *pou_id = new poutype_identifier_c(id->value.c_str());
 
   *(symbol_c *)pou_id = *(symbol_c *)id;
+  pou_id->token = pou_id; /* token_c::token must never dangle (used by cleanup traversals) */
   delete id;
   return pou_id;
 }
@@ -8725,7 +8726,7 @@ identifier_c *il_operator_c_2_identifier_c(symbol_c *il_operator) {
                         );
   free(il_operator);
 */
-  res = new identifier_c(matiec::cstr_pool_strdup(name));
+  res = new identifier_c(name);
   *(symbol_c *)res = *(symbol_c *)il_operator;
   delete il_operator;
   
@@ -8941,8 +8942,6 @@ cleanup:
   stage1_2_lex_cleanup();
   return res;
 }
-
-
 
 
 
