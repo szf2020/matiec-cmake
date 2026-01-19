@@ -657,11 +657,11 @@ class generate_c_sfc_elements_c: public generate_c_base_and_typeid_c {
     }
 
     void *visit(qualifier_c *symbol) {
-      return (void *)symbol->value;
+      return (void *)symbol->value.c_str();
     }
 
     void *visit(timed_qualifier_c *symbol) {
-      return (void *)symbol->value;
+      return (void *)symbol->value.c_str();
     }
 
 }; /* generate_c_sfc_actiondecl_c */

@@ -253,13 +253,47 @@ class symbol_c {
 
 
 
+namespace matiec {
+/* Owns (or represents absence of) a token string while keeping existing
+ * `token->value` call sites working (they expect a C string). */
+class token_string final {
+public:
+  token_string() noexcept = default;
+  token_string(const char* s) { assign(s); }
+
+  token_string& operator=(const char* s) {
+    assign(s);
+    return *this;
+  }
+
+  const char* c_str() const noexcept { return is_null_ ? nullptr : storage_.c_str(); }
+  operator const char*() const noexcept { return c_str(); }
+
+  bool is_null() const noexcept { return is_null_; }
+
+private:
+  void assign(const char* s) {
+    if (!s) {
+      storage_.clear();
+      is_null_ = true;
+      return;
+    }
+    storage_ = s;
+    is_null_ = false;
+  }
+
+  std::string storage_;
+  bool is_null_ = true;
+};
+} // namespace matiec
+
 class token_c: public symbol_c {
   public:
     /* WARNING: only use this method for debugging purposes!! */
     virtual const char *absyntax_cname(void) {return "token_c";};
 
     /* the value of the symbol. */
-    const char *value;
+    matiec::token_string value;
 
   public:
     token_c(const char *value, 

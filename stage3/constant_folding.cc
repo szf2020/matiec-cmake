@@ -1438,7 +1438,7 @@ void *constant_propagation_c::visit(library_c *symbol) {
 /*********************/
 #if DO_CONSTANT_PROPAGATION__
 void *constant_propagation_c::visit(symbolic_variable_c *symbol) {
-	std::string varName = get_var_name_c::get_name(symbol->var_name)->value;
+  std::string varName = get_var_name_c::get_name(symbol->var_name)->value.c_str();
 	if (values->count(varName) > 0) 
 		symbol->const_value = (*values)[varName];
 	return NULL;
@@ -1446,7 +1446,7 @@ void *constant_propagation_c::visit(symbolic_variable_c *symbol) {
 #endif  // DO_CONSTANT_PROPAGATION__
 
 void *constant_propagation_c::visit(symbolic_constant_c *symbol) {
-	std::string varName = get_var_name_c::get_name(symbol->var_name)->value;
+  std::string varName = get_var_name_c::get_name(symbol->var_name)->value.c_str();
 	if (values->count(varName) > 0) 
 		symbol->const_value = (*values)[varName];
 	return NULL;
@@ -2155,5 +2155,4 @@ void *constant_propagation_c::visit(repeat_statement_c *symbol) {
 }
 
 #endif  // DO_CONSTANT_PROPAGATION__
-
 

@@ -207,13 +207,13 @@ class get_datatype_id_str_c: public null_visitor_c {
     /*******************************************/
     /* B 1.1 - Letters, digits and identifiers */
     /*******************************************/
-    void *visit(                 identifier_c *symbol) {return (void *)symbol->value;};
+    void *visit(                 identifier_c *symbol) {return (void *)symbol->value.c_str();};
     // Should not be necessary, as datatype declarations currently use an identifier_c for their name! 
     // Only references to the datatype (when declaring variable, for ex., will use poutype_identifier_c
-    void *visit(derived_datatype_identifier_c *symbol) {return (void *)symbol->value;};   
+    void *visit(derived_datatype_identifier_c *symbol) {return (void *)symbol->value.c_str();};
     // Should not be necessary, as FB declarations currently use an identifier_c for their name! 
     // Only references to the FB (when declaring variable, for ex., will use poutype_identifier_c
-    void *visit(         poutype_identifier_c *symbol) {return (void *)symbol->value;};  
+    void *visit(         poutype_identifier_c *symbol) {return (void *)symbol->value.c_str();};
 
     /***********************************/
     /* B 1.3.1 - Elementary Data Types */
@@ -1468,7 +1468,6 @@ safedt_type_name_c       get_datatype_info_c::safedt_type_name;
 safedate_type_name_c     get_datatype_info_c::safedate_type_name;
 safetod_type_name_c      get_datatype_info_c::safetod_type_name;
 safetime_type_name_c     get_datatype_info_c::safetime_type_name;
-
 
 
 

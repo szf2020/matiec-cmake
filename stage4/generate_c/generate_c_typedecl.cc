@@ -551,9 +551,9 @@ void *visit(array_type_declaration_c *symbol) {
    *       we will keep track of the array datatypes that have already been declared, and henceforth
    *       only declare arrays that have not been previously defined.
    */
-  if (datatypes_already_defined.find(id->value) != datatypes_already_defined.end())
+  if (datatypes_already_defined.find(id->value.c_str()) != datatypes_already_defined.end())
     goto end; // already defined. No need to define it again!!
-  datatypes_already_defined[id->value] = 1; // insert this datatype into the list of already defined arrays!
+  datatypes_already_defined[id->value.c_str()] = 1; // insert this datatype into the list of already defined arrays!
   
   current_typedefinition = array_td;
   current_type_name = id;
@@ -874,9 +874,9 @@ void *visit(ref_type_decl_c *symbol) {
   identifier_c *tmp_id;
   tmp_id = dynamic_cast<identifier_c *>(symbol->ref_type_name);
   if (NULL == tmp_id) ERROR;
-  if (datatypes_already_defined.find(tmp_id->value) != datatypes_already_defined.end())
+  if (datatypes_already_defined.find(tmp_id->value.c_str()) != datatypes_already_defined.end())
     return NULL; // already defined. No need to define it again!!
-  datatypes_already_defined[tmp_id->value] = 1; // insert this datatype into the list of already defined arrays!
+  datatypes_already_defined[tmp_id->value.c_str()] = 1; // insert this datatype into the list of already defined arrays!
   
   current_type_name = NULL;
   current_typedefinition = none_td;
@@ -1164,7 +1164,6 @@ class generate_c_implicit_typedecl_c: public iterator_visitor_c {
       return NULL;
     }
 };
-
 
 
 
