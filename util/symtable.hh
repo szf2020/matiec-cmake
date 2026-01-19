@@ -38,6 +38,7 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 
 
 
@@ -75,23 +76,23 @@ template<typename value_type> class symtable_c {
     void insert(const symbol_c *symbol, value_t value);     // insert a new (string,value) pair. Give an error if string already in map associated to different value!
 
     value_t& operator[](const       char *identifier_str);
-    value_t& operator[](const std::string identifier_str);
+    value_t& operator[](std::string_view identifier_str);
  // value_t& operator[](const   symbol_c *identifier    ); // not yet implemented
-   
+
     /* Since symtable_c does not allow duplicates in each level, count() will return
      *  - 0 : if not found in any level
      *  - n : number of level containing that entry (max is current number of levels!)
      */
     int count(const       char *identifier_str);
-    int count(const std::string identifier_str);
- // int count(const   symbol_c *identifier    ); // not yet implemented
+    int count(std::string_view identifier_str);
+ // int count(const   symbol_c *identifier    ); // not yet implemented   
     
     /* Search for an entry. Will return end() if not found */
     iterator               begin(void);
     iterator               end  (void);
-    iterator               find (const char       *identifier_str);
-    iterator               find (const std::string identifier_str);
-    iterator               find (const symbol_c   *symbol        );
+    iterator               find (const char       *identifier_str);       
+    iterator               find (std::string_view identifier_str);       
+    iterator               find (const symbol_c   *symbol        );       
 
 
   /* iterators ... */

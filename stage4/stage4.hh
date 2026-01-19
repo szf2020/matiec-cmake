@@ -41,6 +41,7 @@
 
 #include "../absyntax/absyntax.hh"
 #include <stdexcept>
+#include <string_view>
 
 /* Used to abort code generation without terminating the whole process. */
 struct stage4_codegen_error : public std::runtime_error {
@@ -69,7 +70,7 @@ class stage4out_c {
     void indent_right(void);
     void indent_left(void);
 
-    void *print(          std::string  value);
+    void *print(     std::string_view value);
     void *print(           const char *value);
     //void *print(               int64_t value); // not required, since we have long long int, or similar
     //void *print(              uint64_t value); // not required, since we have long long int, or similar
@@ -86,10 +87,10 @@ class stage4out_c {
 
 
     void *printupper(const char *str);
-    void *printupper(std::string str);
+    void *printupper(std::string_view str);
 
     void *printlocation(const char *str);
-    void *printlocation(std::string str);
+    void *printlocation(std::string_view str);
 
     void *printlocation_comasep(const char *str);
 

@@ -144,14 +144,14 @@ void symtable_c<value_type>::insert(const symbol_c *symbol, value_t new_value) {
 template<typename value_type>
 int symtable_c<value_type>::count(const       char *identifier_str) {return _base.count(identifier_str)+((inner_scope == NULL)?0:inner_scope->count(identifier_str));}
 template<typename value_type>
-int symtable_c<value_type>::count(const std::string identifier_str) {return _base.count(identifier_str)+((inner_scope == NULL)?0:inner_scope->count(identifier_str));}
+int symtable_c<value_type>::count(std::string_view identifier_str) {return _base.count(identifier_str)+((inner_scope == NULL)?0:inner_scope->count(identifier_str));}
 
 
 // in the operator[] we delegate to find(), since that method will also search in the inner scopes!
 template<typename value_type>
 typename symtable_c<value_type>::value_t& symtable_c<value_type>::operator[] (const       char *identifier_str) {iterator i = find(identifier_str); return (i!=end())?i->second:_base[identifier_str];}
 template<typename value_type>
-typename symtable_c<value_type>::value_t& symtable_c<value_type>::operator[] (const std::string identifier_str) {iterator i = find(identifier_str); return (i!=end())?i->second:_base[identifier_str];}
+typename symtable_c<value_type>::value_t& symtable_c<value_type>::operator[] (std::string_view identifier_str) {iterator i = find(identifier_str); return (i!=end())?i->second:_base[std::string(identifier_str)];}
 
 
 template<typename value_type>
@@ -172,7 +172,7 @@ typename symtable_c<value_type>::iterator symtable_c<value_type>::find(const    
 
 
 template<typename value_type>
-typename symtable_c<value_type>::iterator symtable_c<value_type>::find(const std::string identifier_str) {
+typename symtable_c<value_type>::iterator symtable_c<value_type>::find(std::string_view identifier_str) {
   iterator i;
   if ((inner_scope != NULL) && ((i = inner_scope->find(identifier_str)) != inner_scope->end()))  // NOTE: must use the end() value of the inner scope!
       return i;  // found in the lower level
@@ -204,8 +204,6 @@ void symtable_c<value_type>::print(void) {
     inner_scope->print();
   }
 }
-
-
 
 
 

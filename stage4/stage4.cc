@@ -46,6 +46,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstdlib>
+#include <cctype>
 #include <exception>
 #include <memory>
 
@@ -180,7 +181,12 @@ void stage4out_c::indent_left(void) {
     indent_spaces.erase();
 }
 
-void *stage4out_c::print(           std::string value) {if (!allow_output) return NULL; *out << value; return NULL;}
+void *stage4out_c::print(     std::string_view value) {
+  if (!allow_output) return NULL;
+  if (!value.empty())
+    out->write(value.data(), static_cast<std::streamsize>(value.size()));
+  return NULL;
+}
 void *stage4out_c::print(           const char *value) {if (!allow_output) return NULL; *out << value; return NULL;}
 //void *stage4out_c::print(               int64_t value) {if (!allow_output) return NULL; *out << value; return NULL;}
 //void *stage4out_c::print(              uint64_t value) {if (!allow_output) return NULL; *out << value; return NULL;}
@@ -211,7 +217,7 @@ void *stage4out_c::print_long_long_integer(unsigned long long ll_integer, bool s
 void *stage4out_c::printupper(const char *str) {
   if (!allow_output) return NULL;
   for (int i = 0; str[i] != '\0'; i++)
-    *out << (unsigned char)toupper(str[i]);
+    *out << static_cast<char>(std::toupper(static_cast<unsigned char>(str[i])));
   return NULL;
 }
 
@@ -222,46 +228,40 @@ void *stage4out_c::printlocation(const char *str) {
     if(str[i] == '.')
       *out << '_';
     else
-      *out << (unsigned char)toupper(str[i]);
+      *out << static_cast<char>(std::toupper(static_cast<unsigned char>(str[i])));
   return NULL;
 }
 
 void *stage4out_c::printlocation_comasep(const char *str) {
   if (!allow_output) return NULL;
-  *out << (unsigned char)toupper(str[0]);
+  *out << static_cast<char>(std::toupper(static_cast<unsigned char>(str[0])));
   *out << ',';
-  *out << (unsigned char)toupper(str[1]);
+  *out << static_cast<char>(std::toupper(static_cast<unsigned char>(str[1])));
   *out << ',';
   for (int i = 2; str[i] != '\0'; i++)
     if(str[i] == '.')
       *out << ',';
     else
-      *out << (unsigned char)toupper(str[i]);
+      *out << static_cast<char>(std::toupper(static_cast<unsigned char>(str[i])));
   return NULL;
 }
 
 
 
-void *stage4out_c::printupper(std::string str) {
+void *stage4out_c::printupper(std::string_view str) {
   if (!allow_output) return NULL;
-  /* The string standard class does not have a converter member function to upper case.
-   * We have to do it ourselves, a character at a time...
-   */
-#if 0
-  /* The C++ way of doint things... */
-  for (string::const_iterator p = str.begin(); p != str.end(); ++p)
-    *out << (unsigned char)toupper(*p);
-#else
-  /* Or more simply... */
-    printupper(str.c_str());
-#endif
+  for (char c : str)
+    *out << static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
   return NULL;
 }
 
 
-void *stage4out_c::printlocation(std::string str) {
+void *stage4out_c::printlocation(std::string_view str) {
   if (!allow_output) return NULL;
-  return printlocation(str.c_str());
+  *out << "__";
+  for (char c : str)
+    *out << ((c == '.') ? '_' : static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+  return NULL;
 }
 
 
