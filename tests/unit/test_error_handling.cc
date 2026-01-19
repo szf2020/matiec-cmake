@@ -11,26 +11,76 @@
 #include <gmock/gmock.h>
 
 #include "test_utils.hh"
+#include "matiec/error.hpp"
 
-// Placeholder test to verify test framework is working
-TEST(ErrorHandlingTest, PlaceholderTest) {
-    // This test will be replaced with actual error handling tests in P1
-    EXPECT_TRUE(true);
+TEST(ErrorReporterTest, CollectsMultipleErrors) {
+    matiec::ErrorReporter reporter;
+    reporter.reportParseError("syntax error");
+    reporter.reportSemanticError("semantic error");
+
+    EXPECT_EQ(reporter.errorCount(), 2);
+    ASSERT_EQ(reporter.errors().size(), 2u);
+    EXPECT_EQ(reporter.errors()[0].category(), matiec::ErrorCategory::Syntax);
+    EXPECT_EQ(reporter.errors()[1].category(), matiec::ErrorCategory::Semantic);
 }
 
-// =============================================================================
-// Future P1 tests will include:
-// =============================================================================
-//
-// TEST(ErrorReporterTest, CollectsMultipleErrors)
-// TEST(ErrorReporterTest, PreservesErrorLocation)
-// TEST(ErrorReporterTest, CategorizesErrorSeverity)
-// TEST(ErrorReporterTest, SupportsErrorCallback)
-// TEST(CompilerErrorTest, HasCorrectErrorCategory)
-// TEST(ParseErrorTest, IncludesSourceLocation)
-// TEST(SemanticErrorTest, IncludesTypeInformation)
-//
-// =============================================================================
+TEST(ErrorReporterTest, PreservesErrorLocation) {
+    matiec::ErrorReporter reporter;
+    matiec::SourceLocation loc;
+    loc.filename = "test.st";
+    loc.line = 12;
+    loc.column = 3;
+
+    reporter.reportParseError("unexpected token", loc);
+
+    ASSERT_EQ(reporter.errors().size(), 1u);
+    ASSERT_TRUE(reporter.errors()[0].location().has_value());
+    EXPECT_EQ(reporter.errors()[0].location()->filename, "test.st");
+    EXPECT_EQ(reporter.errors()[0].location()->line, 12);
+    EXPECT_EQ(reporter.errors()[0].location()->column, 3);
+}
+
+TEST(ErrorReporterTest, CategorizesErrorSeverity) {
+    matiec::ErrorReporter reporter;
+    reporter.reportWarning("deprecated syntax");
+    reporter.reportParseError("missing ';'");
+
+    EXPECT_EQ(reporter.warningCount(), 1);
+    EXPECT_EQ(reporter.errorCount(), 1);
+    ASSERT_EQ(reporter.errors().size(), 2u);
+    EXPECT_EQ(reporter.errors()[0].severity(), matiec::ErrorSeverity::Warning);
+    EXPECT_EQ(reporter.errors()[1].severity(), matiec::ErrorSeverity::Error);
+}
+
+TEST(ErrorReporterTest, SupportsErrorCallback) {
+    matiec::ErrorReporter reporter;
+    int calls = 0;
+
+    reporter.setCallback([&](const matiec::CompilerError& err) {
+        ++calls;
+        EXPECT_EQ(err.message(), "callback test");
+    });
+
+    reporter.reportParseError("callback test");
+    EXPECT_EQ(calls, 1);
+}
+
+TEST(CompilerErrorTest, HasCorrectErrorCategory) {
+    matiec::CompilerError err(matiec::ErrorSeverity::Error,
+                              matiec::ErrorCategory::Semantic,
+                              "undefined variable");
+    EXPECT_EQ(err.category(), matiec::ErrorCategory::Semantic);
+    EXPECT_TRUE(err.isError());
+    EXPECT_FALSE(err.isFatal());
+}
+
+TEST(ParseErrorTest, IncludesSourceLocationInFormat) {
+    matiec::ParseError err("parse failed", {"file.st", 10, 2});
+    const std::string formatted = err.format();
+    EXPECT_THAT(formatted, ::testing::HasSubstr("file.st:10:2"));
+    EXPECT_THAT(formatted, ::testing::HasSubstr("error"));
+    EXPECT_THAT(formatted, ::testing::HasSubstr("parse failed"));
+}
 
 namespace {
 

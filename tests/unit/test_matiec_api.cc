@@ -235,9 +235,20 @@ TEST_F(MatiecApiTest, CompileFromString) {
 // =============================================================================
 
 TEST_F(MatiecApiTest, DetectsSyntaxError) {
-    // SKIP: matiec calls exit() on parse errors, which terminates the test process
-    // This is a known limitation of the current matiec architecture
-    GTEST_SKIP() << "matiec calls exit() on parse errors, cannot test in-process";
+    TempDir temp;
+    auto file = temp.path() / "invalid.st";
+    writeFile(file, samples::INVALID_SYNTAX);
+    std::string output_dir_str = temp.path().string();
+    opts_.output_dir = output_dir_str.c_str();
+
+    std::string file_str = file.string();
+    auto result = matiec_compile_file(file_str.c_str(), &opts_, &result_);
+
+    EXPECT_EQ(result, MATIEC_ERROR_PARSE);
+    EXPECT_EQ(result_.error_code, MATIEC_ERROR_PARSE);
+    EXPECT_NE(result_.error_message, nullptr);
+    EXPECT_NE(result_.error_file, nullptr);
+    EXPECT_GT(result_.error_line, 0);
 }
 
 TEST_F(MatiecApiTest, DetectsTypeError) {
@@ -252,6 +263,63 @@ TEST_F(MatiecApiTest, DetectsTypeError) {
 
     EXPECT_EQ(result, MATIEC_ERROR_SEMANTIC);
     EXPECT_EQ(result_.error_code, MATIEC_ERROR_SEMANTIC);
+    EXPECT_NE(result_.error_message, nullptr);
+    EXPECT_NE(result_.error_file, nullptr);
+    EXPECT_GT(result_.error_line, 0);
+}
+
+TEST_F(MatiecApiTest, SupportsMultipleCompilesInOneProcess) {
+    TempDir temp;
+
+    const auto out1 = (temp.path() / "out1").string();
+    const auto out2 = (temp.path() / "out2").string();
+    const auto out3 = (temp.path() / "out3").string();
+    fs::create_directories(out1);
+    fs::create_directories(out2);
+    fs::create_directories(out3);
+
+    // 1) Parse error
+    {
+        auto file = temp.path() / "bad.st";
+        writeFile(file, samples::INVALID_SYNTAX);
+
+        matiec_options_t opts = opts_;
+        opts.output_dir = out1.c_str();
+
+        matiec_result_t res{};
+        auto err = matiec_compile_file(file.string().c_str(), &opts, &res);
+        EXPECT_EQ(err, MATIEC_ERROR_PARSE);
+        matiec_result_free(&res);
+    }
+
+    // 2) Successful compile
+    {
+        auto file = temp.path() / "good.st";
+        writeFile(file, samples::MINIMAL_PROGRAM);
+
+        matiec_options_t opts = opts_;
+        opts.output_dir = out2.c_str();
+
+        matiec_result_t res{};
+        auto err = matiec_compile_file(file.string().c_str(), &opts, &res);
+        EXPECT_EQ(err, MATIEC_OK) << "Error: " << (res.error_message ? res.error_message : "none");
+        matiec_result_free(&res);
+    }
+
+    // 3) Successful compile with pre-parsing enabled (forward refs)
+    {
+        auto file = temp.path() / "preparse.st";
+        writeFile(file, samples::MINIMAL_PROGRAM);
+
+        matiec_options_t opts = opts_;
+        opts.allow_forward_refs = true;
+        opts.output_dir = out3.c_str();
+
+        matiec_result_t res{};
+        auto err = matiec_compile_file(file.string().c_str(), &opts, &res);
+        EXPECT_EQ(err, MATIEC_OK) << "Error: " << (res.error_message ? res.error_message : "none");
+        matiec_result_free(&res);
+    }
 }
 
 // =============================================================================
@@ -278,11 +346,16 @@ TEST_F(MatiecApiTest, AcceptsNullOptions) {
     auto file = temp.path() / "test.st";
     writeFile(file, samples::MINIMAL_PROGRAM);
 
-    // Compile with NULL options (should use defaults)
+    // Compile with NULL options (should use defaults), but run from a temp cwd
+    // so we don't accidentally emit generated C files into the repo root.
+    const auto old_cwd = fs::current_path();
+    fs::current_path(temp.path());
+
     std::string file_str = file.string();
     auto result = matiec_compile_file(file_str.c_str(), nullptr, &result_);
 
-    // May fail due to missing include dir, but should not crash
-    // The important thing is it doesn't crash with null options
-    EXPECT_TRUE(result == MATIEC_OK || result == MATIEC_ERROR_PARSE || result == MATIEC_ERROR_SEMANTIC);
+    fs::current_path(old_cwd);
+
+    // Should not crash; most likely fails due to missing include dir from this cwd.
+    EXPECT_EQ(result, MATIEC_ERROR_PARSE);
 }

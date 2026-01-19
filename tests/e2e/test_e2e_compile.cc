@@ -362,13 +362,25 @@ END_PROGRAM
 // =============================================================================
 
 TEST_F(E2ECompileTest, DetectMissingSemicolon) {
-    // SKIP: matiec calls exit() on parse errors, which terminates the test process
-    GTEST_SKIP() << "matiec calls exit() on parse errors, cannot test in-process";
+    CompileAndExpectError(R"(
+PROGRAM missing_semicolon
+VAR
+    x : INT;
+END_VAR
+    x := 1
+END_PROGRAM
+)", MATIEC_ERROR_PARSE);
 }
 
 TEST_F(E2ECompileTest, DetectUndeclaredVariable) {
-    // SKIP: matiec calls exit() on parse errors, which terminates the test process
-    GTEST_SKIP() << "matiec calls exit() on parse errors, cannot test in-process";
+    CompileAndExpectError(R"(
+PROGRAM undeclared_var
+VAR
+    x : INT;
+END_VAR
+    y := 1;
+END_PROGRAM
+)", MATIEC_ERROR_PARSE);
 }
 
 TEST_F(E2ECompileTest, DetectTypeMismatch) {
