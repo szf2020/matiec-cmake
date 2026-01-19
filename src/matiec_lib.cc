@@ -117,12 +117,92 @@ static void result_init(matiec_result_t *result) {
     result->output_file_count = 0;
 }
 
+static matiec_error_t map_error_category(matiec::ErrorCategory category) {
+    switch (category) {
+        case matiec::ErrorCategory::Lexical:
+        case matiec::ErrorCategory::Syntax:
+            return MATIEC_ERROR_PARSE;
+        case matiec::ErrorCategory::Semantic:
+        case matiec::ErrorCategory::Type:
+            return MATIEC_ERROR_SEMANTIC;
+        case matiec::ErrorCategory::CodeGen:
+            return MATIEC_ERROR_CODEGEN;
+        case matiec::ErrorCategory::IO:
+            return MATIEC_ERROR_IO;
+        case matiec::ErrorCategory::Internal:
+        default:
+            return MATIEC_ERROR_INTERNAL;
+    }
+}
+
+static const matiec::CompilerError* first_reported_error() {
+    const auto& errors = matiec::globalErrorReporter().errors();
+    for (const auto& err : errors) {
+        if (err.isError()) {
+            return &err;
+        }
+    }
+    return nullptr;
+}
+
+static void result_clear_error_details(matiec_result_t* result) {
+    if (!result) return;
+
+    if (result->error_message) {
+        free(result->error_message);
+        result->error_message = nullptr;
+    }
+
+    // reserved[0] stores an owned copy of error_file (if any).
+    if (result->reserved[0]) {
+        free(result->reserved[0]);
+        result->reserved[0] = nullptr;
+    }
+
+    result->error_line = 0;
+    result->error_column = 0;
+    result->error_file = nullptr;
+}
+
 static void result_set_error(matiec_result_t *result, matiec_error_t code, const char *message) {
     if (!result) return;
 
+    result_clear_error_details(result);
     result->error_code = code;
     if (message) {
         result->error_message = strdup(message);
+    }
+}
+
+static void result_set_error_from_reporter(matiec_result_t* result,
+                                          matiec_error_t fallback_code,
+                                          const char* fallback_message) {
+    if (!result) return;
+
+    const matiec::CompilerError* err = first_reported_error();
+    if (!err) {
+        result_set_error(result, fallback_code, fallback_message);
+        return;
+    }
+
+    result_clear_error_details(result);
+
+    result->error_code = map_error_category(err->category());
+
+    const std::string formatted = err->format();
+    result->error_message = strdup(formatted.c_str());
+
+    if (err->location() && err->location()->isValid()) {
+        result->error_line = err->location()->line;
+        result->error_column = err->location()->column;
+
+        if (!err->location()->filename.empty()) {
+            char* file_copy = strdup(err->location()->filename.c_str());
+            if (file_copy) {
+                result->reserved[0] = file_copy;
+                result->error_file = file_copy;
+            }
+        }
     }
 }
 
@@ -144,22 +224,31 @@ MATIEC_API matiec_error_t matiec_compile_file(
     if (g_error_callback) {
         matiec::globalErrorReporter().setCallback(
             [](const matiec::CompilerError& err) {
-                if (g_error_callback) {
-                    const char* file = nullptr;
-                    int line = 0;
-                    int column = 0;
-
-                    if (err.location() && err.location()->isValid()) {
-                        file = err.location()->filename.c_str();
-                        line = err.location()->line;
-                        column = err.location()->column;
-                    }
-
-                    g_error_callback(file, line, column,
-                                     err.message().c_str(), g_error_user_data);
+                if (!g_error_callback) {
+                    return;
                 }
+
+                const char* file = nullptr;
+                int line = 0;
+                int column = 0;
+
+                if (err.location() && err.location()->isValid()) {
+                    file = err.location()->filename.c_str();
+                    line = err.location()->line;
+                    column = err.location()->column;
+                }
+
+                // Include severity in message since the C callback does not
+                // expose it explicitly.
+                std::string msg = std::string(matiec::severityToString(err.severity()))
+                                  + ": " + err.message();
+
+                g_error_callback(file, line, column, msg.c_str(), g_error_user_data);
             }
         );
+    } else {
+        // Ensure we don't keep a stale callback from a previous compilation.
+        matiec::globalErrorReporter().setCallback(nullptr);
     }
 
     if (!input_file) {
@@ -191,29 +280,64 @@ MATIEC_API matiec_error_t matiec_compile_file(
 
     symbol_c *tree_root = nullptr;
     symbol_c *ordered_tree_root = nullptr;
+    matiec_error_t ret = MATIEC_OK;
+
+    // Ensure stale global state from prior in-process compilations does not
+    // affect this run.
+    stage1_2_reset();
+    absyntax_utils_reset();
+    matiec::cstr_pool_clear();
 
     /* Stage 1 & 2: Lexical and Syntax analysis */
     if (stage1_2(const_cast<char*>(input_file), &tree_root) < 0) {
-        result_set_error(result, MATIEC_ERROR_PARSE, "Parsing failed (lexical or syntax error)");
-        return MATIEC_ERROR_PARSE;
+        result_set_error_from_reporter(
+            result,
+            MATIEC_ERROR_PARSE,
+            "Parsing failed (lexical or syntax error)");
+        ret = result->error_code;
+        goto cleanup;
     }
 
     /* Stage pre-3: Initialize symbol tables */
+    absyntax_utils_reset();
     absyntax_utils_init(tree_root);
 
     /* Stage 3: Semantic analysis */
     if (stage3(tree_root, &ordered_tree_root) < 0) {
-        result_set_error(result, MATIEC_ERROR_SEMANTIC, "Semantic analysis failed");
-        return MATIEC_ERROR_SEMANTIC;
+        result_set_error_from_reporter(
+            result,
+            MATIEC_ERROR_SEMANTIC,
+            "Semantic analysis failed");
+        ret = result->error_code;
+        goto cleanup;
     }
 
     /* Stage 4: Code generation */
     if (stage4(ordered_tree_root, const_cast<char*>(builddir)) < 0) {
-        result_set_error(result, MATIEC_ERROR_CODEGEN, "Code generation failed");
-        return MATIEC_ERROR_CODEGEN;
+        result_set_error_from_reporter(
+            result,
+            MATIEC_ERROR_CODEGEN,
+            "Code generation failed");
+        ret = result->error_code;
+        goto cleanup;
     }
 
-    return MATIEC_OK;
+    ret = MATIEC_OK;
+
+cleanup:
+    // These global tables store raw pointers into the AST; clear them before
+    // freeing the compilation's AST.
+    absyntax_utils_reset();
+
+    // Free the AST (including any reordered wrapper produced by stage3) and
+    // then release lexer-owned strings used by tokens/filenames.
+    matiec::ast_delete(tree_root, ordered_tree_root);
+    matiec::cstr_pool_clear();
+
+    // Clear stage1_2 lexer/parser symbol tables and flags for the next run.
+    stage1_2_reset();
+
+    return ret;
 }
 
 MATIEC_API matiec_error_t matiec_compile_string(
@@ -279,6 +403,13 @@ MATIEC_API matiec_error_t matiec_compile_string(
 
 MATIEC_API void matiec_result_free(matiec_result_t *result) {
     if (!result) return;
+
+    // reserved[0] stores an owned copy of error_file (if any).
+    if (result->reserved[0]) {
+        free(result->reserved[0]);
+        result->reserved[0] = nullptr;
+    }
+    result->error_file = nullptr;
 
     if (result->error_message) {
         free(result->error_message);
