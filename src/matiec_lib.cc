@@ -38,6 +38,15 @@
 #include <unistd.h>
 #endif
 
+static char* matiec_strdup(const char* s) {
+    if (!s) return nullptr;
+#ifdef _WIN32
+    return _strdup(s);
+#else
+    return ::strdup(s);
+#endif
+}
+
 /* Global error callback */
 static matiec_error_callback_t g_error_callback = nullptr;
 static void *g_error_user_data = nullptr;
@@ -170,7 +179,7 @@ static void result_set_error(matiec_result_t *result, matiec_error_t code, const
     result_clear_error_details(result);
     result->error_code = code;
     if (message) {
-        result->error_message = strdup(message);
+        result->error_message = matiec_strdup(message);
     }
 }
 
@@ -190,14 +199,14 @@ static void result_set_error_from_reporter(matiec_result_t* result,
     result->error_code = map_error_category(err->category());
 
     const std::string formatted = err->format();
-    result->error_message = strdup(formatted.c_str());
+    result->error_message = matiec_strdup(formatted.c_str());
 
     if (err->location() && err->location()->isValid()) {
         result->error_line = err->location()->line;
         result->error_column = err->location()->column;
 
         if (!err->location()->filename.empty()) {
-            char* file_copy = strdup(err->location()->filename.c_str());
+            char* file_copy = matiec_strdup(err->location()->filename.c_str());
             if (file_copy) {
                 result->reserved[0] = file_copy;
                 result->error_file = file_copy;

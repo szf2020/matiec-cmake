@@ -125,6 +125,7 @@
 
 /* Required for strdup() */
 #include <string.h>
+#include <string>
 
 /* Required only for the declaration of abstract syntax classes
  * (class symbol_c; class token_c; class list_c;)
@@ -2113,17 +2114,17 @@ void unput_char(const char c) {
 /* return all the text in the current token back to the input stream, except the first n chars. */
 void unput_text(int n) {
   if (n < 0) ERROR;
-  signed int i; // must be signed! The iterartion may end with -1 when this function is called with n=0 !!
 
-  char *yycopy = strdup( yytext ); /* unput_char() destroys yytext, so we copy it first */
-  for (int i = yyleng-1; i >= n; i--)
-    unput_char(yycopy[i]);
+  // unput_char() destroys yytext, so copy the token first.
+  std::string yycopy(yytext, static_cast<size_t>(yyleng));
+  for (int i = yyleng - 1; i >= n; --i)
+    unput_char(yycopy[static_cast<size_t>(i)]);
 
   *current_tracking = previous_tracking;
-  yycopy[n] = '\0';
-  UpdateTracking(yycopy);
-  
-  free(yycopy);
+  if (n < yyleng) {
+    yycopy[static_cast<size_t>(n)] = '\0';
+  }
+  UpdateTracking(yycopy.c_str());
 }
 
 
@@ -2132,12 +2133,11 @@ void unput_text(int n) {
  * but first return to the stream an additional character to mark the end of the token. 
  */
 void unput_and_mark(const char mark_char) {
-  char *yycopy = strdup( yytext ); /* unput_char() destroys yytext, so we copy it first */
+  // unput_char() destroys yytext, so copy the token first.
+  const std::string yycopy(yytext, static_cast<size_t>(yyleng));
   unput_char(mark_char);
-  for (int i = yyleng-1; i >= 0; i--)
-    unput_char(yycopy[i]);
-
-  free(yycopy);
+  for (int i = yyleng - 1; i >= 0; --i)
+    unput_char(yycopy[static_cast<size_t>(i)]);
   *current_tracking = previous_tracking;
 }
 
@@ -2150,46 +2150,41 @@ void unput_and_mark(const char mark_char) {
  * the body_state.
  */
 /* The buffer used by the body_state state */
-char *bodystate_buffer        = NULL;
+std::string bodystate_buffer;
 bool  bodystate_is_whitespace = 1; // TRUE (1) if buffer is empty, or only contains whitespace.
 tracking_t bodystate_init_tracking;
 
 /* append text to bodystate_buffer */
-void  append_bodystate_buffer(const char *text, int is_whitespace) {
+void  append_bodystate_buffer(const char *text, int is_whitespace) {     
   // printf("<<<append_bodystate_buffer>>> %d <%s><%s>\n", bodystate_buffer, text, (NULL != bodystate_buffer)?bodystate_buffer:"NULL");
-  long int old_len = 0;
   // make backup of tracking if we are starting off a new body_state_buffer
-  if (NULL == bodystate_buffer) bodystate_init_tracking = *current_tracking;
-  // set bodystate_is_whitespace flag if we are starting a new buffer
-  if (NULL == bodystate_buffer) bodystate_is_whitespace = 1;
+  if (bodystate_buffer.empty()) bodystate_init_tracking = *current_tracking;
+  // set bodystate_is_whitespace flag if we are starting a new buffer    
+  if (bodystate_buffer.empty()) bodystate_is_whitespace = 1;
   // set bodystate_is_whitespace flag to FALSE if we are adding non white space to buffer
   if (!is_whitespace)           bodystate_is_whitespace = 0;
 
-  if (NULL != bodystate_buffer) old_len = strlen(bodystate_buffer);
-  bodystate_buffer = (char *)realloc(bodystate_buffer, old_len + strlen(text) + 1);
-  if (NULL == bodystate_buffer) ERROR;
-  strcpy(bodystate_buffer + old_len, text);
+  bodystate_buffer.append(text ? text : "");
   //printf("=<%s> %d %d\n", (NULL != bodystate_buffer)?bodystate_buffer:NULL, old_len + strlen(text) + 1, bodystate_buffer);
 }
 
 /* Return all data in bodystate_buffer back to flex, and empty bodystate_buffer. */
 void   unput_bodystate_buffer(void) {
-  if (NULL == bodystate_buffer) ERROR;
-  // printf("<<<unput_bodystate_buffer>>>\n%s\n", bodystate_buffer);
-  
-  for (long int i = strlen(bodystate_buffer)-1; i >= 0; i--)
-    unput_char(bodystate_buffer[i]);
-  
-  free(bodystate_buffer);
-  bodystate_buffer        = NULL;
-  bodystate_is_whitespace = 1;  
+  if (bodystate_buffer.empty()) ERROR;
+  // printf("<<<unput_bodystate_buffer>>>\n%s\n", bodystate_buffer);     
+
+  for (long int i = static_cast<long int>(bodystate_buffer.size()) - 1; i >= 0; --i)
+    unput_char(bodystate_buffer[static_cast<size_t>(i)]);
+
+  bodystate_buffer.clear();
+  bodystate_is_whitespace = 1;
   *current_tracking = bodystate_init_tracking;
 }
 
 
 /* Return true if bodystate_buffer is empty or ony contains whitespace!! */
 int  isempty_bodystate_buffer(void) {
-  if (NULL == bodystate_buffer) return 1;
+  if (bodystate_buffer.empty()) return 1;
   if (bodystate_is_whitespace)  return 1;
   return 0;
 }
@@ -2266,11 +2261,9 @@ void stage1_2_lex_cleanup(void) {
     yyin = (current_tracking != NULL) ? current_tracking->in_file : NULL;
   }
 
-  if (bodystate_buffer != NULL) {
-    free(bodystate_buffer);
-    bodystate_buffer = NULL;
-    bodystate_is_whitespace = 1;
-  }
+  bodystate_buffer.clear();
+  bodystate_buffer.shrink_to_fit();
+  bodystate_is_whitespace = 1;
 
   if (current_tracking != NULL) {
     FreeTracking(current_tracking);
