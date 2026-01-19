@@ -468,10 +468,9 @@ class generate_c_inlinefcall_c: public generate_c_base_and_typeid_c {
            *       we can consider this as just memory required for the compilation process
            *       that will be free'd when the program terminates.
            */
-          char *tmp = (char *)malloc(32); /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
-          if (tmp == NULL) ERROR;
-          int res = snprintf(tmp, 32, "%d", symbol->extensible_param_count);
-          if ((res >= 32) || (res < 0)) ERROR;
+          char tmp[32]; /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
+          int res = snprintf(tmp, sizeof(tmp), "%d", symbol->extensible_param_count);
+          if ((res >= static_cast<int>(sizeof(tmp))) || (res < 0)) ERROR;
           identifier_c *param_value = new identifier_c(tmp);
           uint_type_name_c *param_type  = new uint_type_name_c();
           identifier_c *param_name = new identifier_c(INLINE_PARAM_COUNT);
@@ -651,11 +650,14 @@ class generate_c_inlinefcall_c: public generate_c_base_and_typeid_c {
            * parameter name so we can go looking for the value passed to the correct
            * extended parameter (e.g. IN1, IN2, IN3, IN4, ...)
            */
-          char *tmp = (char *)malloc(32); /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
-          int res = snprintf(tmp, 32, "%d", fp_iterator.extensible_param_index());
-          if ((res >= 32) || (res < 0)) ERROR;
-          param_name = new identifier_c(strdup2(param_name->value, tmp));
-          if (param_name->value == NULL) ERROR;
+          char tmp[32]; /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
+          int res = snprintf(tmp, sizeof(tmp), "%d", fp_iterator.extensible_param_index());
+          if ((res >= static_cast<int>(sizeof(tmp))) || (res < 0)) ERROR;
+
+          const char* base = param_name->value ? param_name->value : "";
+          std::string full_name(base);
+          full_name += tmp;
+          param_name = new identifier_c(full_name.c_str());
         }
     
         symbol_c *param_type = fp_iterator.param_type();
@@ -809,10 +811,9 @@ class generate_c_inlinefcall_c: public generate_c_base_and_typeid_c {
            *       we can consider this as just memory required for the compilation process
            *       that will be free'd when the program terminates.
            */
-          char *tmp = (char *)malloc(32); /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
-          if (tmp == NULL) ERROR;
-          int res = snprintf(tmp, 32, "%d", symbol->extensible_param_count);
-          if ((res >= 32) || (res < 0)) ERROR;
+          char tmp[32]; /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
+          int res = snprintf(tmp, sizeof(tmp), "%d", symbol->extensible_param_count);
+          if ((res >= static_cast<int>(sizeof(tmp))) || (res < 0)) ERROR;
           identifier_c *param_value = new identifier_c(tmp);
           uint_type_name_c *param_type  = new uint_type_name_c();
           identifier_c *param_name = new identifier_c(INLINE_PARAM_COUNT);
@@ -825,11 +826,14 @@ class generate_c_inlinefcall_c: public generate_c_base_and_typeid_c {
            * parameter name so we can go looking for the value passed to the correct
            * extended parameter (e.g. IN1, IN2, IN3, IN4, ...)
            */
-          char *tmp = (char *)malloc(32); /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
-          int res = snprintf(tmp, 32, "%d", fp_iterator.extensible_param_index());
-          if ((res >= 32) || (res < 0)) ERROR;
-          param_name = new identifier_c(strdup2(param_name->value, tmp));
-          if (param_name->value == NULL) ERROR;
+          char tmp[32]; /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
+          int res = snprintf(tmp, sizeof(tmp), "%d", fp_iterator.extensible_param_index());
+          if ((res >= static_cast<int>(sizeof(tmp))) || (res < 0)) ERROR;
+
+          const char* base = param_name->value ? param_name->value : "";
+          std::string full_name(base);
+          full_name += tmp;
+          param_name = new identifier_c(full_name.c_str());
         }
         
         symbol_c *param_type = fp_iterator.param_type();
@@ -933,4 +937,3 @@ class generate_c_inlinefcall_c: public generate_c_base_and_typeid_c {
     }
 
 };  /* generate_c_inlinefcall_c */
-
