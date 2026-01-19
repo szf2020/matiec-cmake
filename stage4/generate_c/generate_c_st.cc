@@ -754,15 +754,9 @@ void *visit(function_invocation_c *symbol) {
        * paramters, and stored that info in the abstract syntax tree. We simply
        * re-use that value.
        */
-      /* NOTE: we are not freeing the malloc'd memory. This is not really a bug.
-       *       Since we are writing a compiler, which runs to termination quickly,
-       *       we can consider this as just memory required for the compilation process
-       *       that will be free'd when the program terminates.
-       */
-      char tmp[32]; /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
-      int res = snprintf(tmp, sizeof(tmp), "%d", symbol->extensible_param_count);
-      if ((res >= static_cast<int>(sizeof(tmp))) || (res < 0)) ERROR;
-      identifier_c *param_value = new identifier_c(tmp);
+      /* Format the parameter count without fixed buffers. */
+      const std::string param_count_str = std::to_string(symbol->extensible_param_count);
+      identifier_c *param_value = new identifier_c(param_count_str.c_str());
       uint_type_name_c *param_type  = new uint_type_name_c();
       identifier_c *param_name = new identifier_c("");
       ADD_PARAM_LIST(param_name, param_value, param_type, function_param_iterator_c::direction_in)
@@ -774,13 +768,9 @@ void *visit(function_invocation_c *symbol) {
        * parameter name so we can go looking for the value passed to the correct
        * extended parameter (e.g. IN1, IN2, IN3, IN4, ...)
        */
-      char tmp[32]; /* enough space for a call with 10^31 (larger than 2^64) input parameters! */
-      int res = snprintf(tmp, sizeof(tmp), "%d", fp_iterator.extensible_param_index());
-      if ((res >= static_cast<int>(sizeof(tmp))) || (res < 0)) ERROR;
-
       const char* base = param_name->value ? param_name->value : "";
       std::string full_name(base);
-      full_name += tmp;
+      full_name += std::to_string(fp_iterator.extensible_param_index());
       param_name = new identifier_c(full_name.c_str());
     }
     
@@ -1349,7 +1339,6 @@ void *visit(exit_statement_c *symbol) {
 
 
 }; /* generate_c_st_c */
-
 
 
 
