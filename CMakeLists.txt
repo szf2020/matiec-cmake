@@ -132,6 +132,18 @@ include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# ==============================================================================
+# Common infrastructure: modern error reporter (shared by tools + library)
+# ==============================================================================
+add_library(matiec_error STATIC
+    src/error_reporter.cc
+)
+target_include_directories(matiec_error PUBLIC
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}
+)
+
 # Add subdirectories for internal libraries
 add_subdirectory(absyntax)
 add_subdirectory(absyntax_utils)
@@ -159,7 +171,6 @@ set(MATIEC_CORE_LIBS
 # getopt_compat.c is NOT included - it's only for command-line tools on Windows
 set(MATIEC_LIB_SOURCES
     src/matiec_lib.cc
-    src/error_reporter.cc
     src/runtime_options.cc
 )
 
@@ -174,11 +185,25 @@ if(MATIEC_BUILD_STATIC)
             ${CMAKE_SOURCE_DIR}
             ${CMAKE_BINARY_DIR}
     )
-    target_link_libraries(matiec_static PRIVATE ${MATIEC_CORE_LIBS})
+    target_link_libraries(matiec_static
+        PRIVATE
+            ${MATIEC_CORE_LIBS}
+        PUBLIC
+            matiec_error
+    )
     set_target_properties(matiec_static PROPERTIES
         OUTPUT_NAME matiec
         ARCHIVE_OUTPUT_NAME matiec
     )
+    # On Windows, a shared library also generates an import library with a .lib
+    # extension. Avoid clobbering that file by giving the static archive a
+    # distinct name.
+    if(WIN32)
+        set_target_properties(matiec_static PROPERTIES
+            OUTPUT_NAME matiec_static
+            ARCHIVE_OUTPUT_NAME matiec_static
+        )
+    endif()
 
     # Alias for use in subdirectory builds
     add_library(matiec::static ALIAS matiec_static)
@@ -196,7 +221,7 @@ if(MATIEC_BUILD_SHARED)
             ${CMAKE_SOURCE_DIR}
             ${CMAKE_BINARY_DIR}
     )
-    target_link_libraries(matiec_shared PRIVATE ${MATIEC_CORE_LIBS})
+    target_link_libraries(matiec_shared PRIVATE ${MATIEC_CORE_LIBS} matiec_error)
     set_target_properties(matiec_shared PROPERTIES
         OUTPUT_NAME matiec
         VERSION ${PROJECT_VERSION}

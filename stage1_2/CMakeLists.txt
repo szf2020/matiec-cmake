@@ -47,4 +47,4 @@ target_include_directories(stage1_2
 )
 
 # Dependencies
-target_link_libraries(stage1_2 PUBLIC absyntax)
+target_link_libraries(stage1_2 PUBLIC absyntax matiec_error)

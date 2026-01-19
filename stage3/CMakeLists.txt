@@ -21,3 +21,4 @@ target_include_directories(stage3 PUBLIC
 )
 
 target_link_libraries(stage3 PUBLIC absyntax absyntax_utils)
+target_link_libraries(stage3 PUBLIC matiec_error)

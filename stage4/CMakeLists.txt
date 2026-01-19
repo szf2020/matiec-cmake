@@ -20,6 +20,7 @@ target_include_directories(stage4_c PUBLIC
     ${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(stage4_c PUBLIC absyntax)
+target_link_libraries(stage4_c PUBLIC matiec_error)
 
 # IEC code generator (iec2iec)
 add_library(stage4_iec STATIC
@@ -33,3 +34,4 @@ target_include_directories(stage4_iec PUBLIC
     ${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(stage4_iec PUBLIC absyntax)
+target_link_libraries(stage4_iec PUBLIC matiec_error)
