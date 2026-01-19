@@ -40,34 +40,18 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 
 
 
 
 template<typename value_type> class dsymtable_c {
-  /* Case insensitive string compare copied from
-   * "The C++ Programming Language" - 3rd Edition
-   * by Bjarne Stroustrup, ISBN 0201889544.
-   */
-  class nocase_c {
-    public:
-      bool operator() (const std::string& x, const std::string& y) const {
-        std::string::const_iterator ix = x.begin();
-        std::string::const_iterator iy = y.begin();
-
-        for(; (ix != x.end()) && (iy != y.end()) && (toupper(*ix) == toupper(*iy)); ++ix, ++iy);
-        if (ix == x.end()) return (iy != y.end());
-        if (iy == y.end()) return false;
-        return (toupper(*ix) < toupper(*iy));
-      };
-  };
-
   public:
     typedef value_type value_t;
 
   private:
-    /* Comparison between identifiers must ignore case, therefore the use of nocase_c */
-    typedef std::multimap<std::string, value_t, nocase_c> base_t;
+    /* Comparison between identifiers must ignore case. */
+    typedef std::multimap<std::string, value_t, nocasecmp_c> base_t;
     base_t _base;
 
   public:
@@ -89,19 +73,23 @@ template<typename value_type> class dsymtable_c {
 
     /* Determine how many entries are associated to key identifier_str */ 
     /* returns: 0 if no entry is found, 1 if 1 entry is found, ..., n if n entries are found */
-    int count(const char *identifier_str)    {return _base.count(identifier_str);}
+    int count(const char *identifier_str)    {return static_cast<int>(_base.count(identifier_str));}
+    int count(std::string_view identifier_str) {return static_cast<int>(_base.count(identifier_str));}
     int count(const symbol_c *symbol)        {return count(symbol_to_string(symbol));}
     
     /* Search for an entry associated with identifier_str. Will return end() if not found */
     iterator find(const char *identifier_str)        {return _base.find(identifier_str);}
+    iterator find(std::string_view identifier_str)   {return _base.find(identifier_str);}
     iterator find(const symbol_c *symbol)            {return find(symbol_to_string(symbol));}
     
-    /* Search for the first entry associated with (i.e. with key ==) identifier_str. Will return end() if not found (NOTE: end() != end_value()) */
+    /* Search for the first entry associated with (i.e. with key ==) identifier_str. Will return end() if not found (NOTE: end() != end_value()) */       
     iterator lower_bound(const char *identifier_str) {return ((count(identifier_str) == 0)? _base.end() : _base.lower_bound(identifier_str));}
+    iterator lower_bound(std::string_view identifier_str) {return ((count(identifier_str) == 0)? _base.end() : _base.lower_bound(identifier_str));}
     iterator lower_bound(const symbol_c *symbol)     {return lower_bound(symbol_to_string(symbol));}
     
     /* Search for the first entry with key greater than identifier_str. Will return end() if not found */
     iterator upper_bound(const char *identifier_str) {return ((count(identifier_str) == 0)? _base.end() : _base.upper_bound(identifier_str));}
+    iterator upper_bound(std::string_view identifier_str) {return ((count(identifier_str) == 0)? _base.end() : _base.upper_bound(identifier_str));}
     iterator upper_bound(const symbol_c *symbol)     {return upper_bound(symbol_to_string(symbol));}
 
     /* get the value to which an iterator is pointing to... */
