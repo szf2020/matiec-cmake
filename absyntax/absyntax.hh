@@ -50,6 +50,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <cstddef>
 #include <stdint.h>  // required for uint64_t, etc...
 #include "../main.hh" // required for uint8_t, real_64_t, ..., and the macros INT8_MAX, REAL32_MAX, ... */
 
@@ -238,10 +239,15 @@ class symbol_c {
             );
 
     /* default destructor */
-    /* must be virtual so compiler does not complain... */ 
+    /* must be virtual so compiler does not complain... */
     virtual ~symbol_c(void) {return;};
 
     virtual void *accept(visitor_c &visitor) {return NULL;};
+
+    /* Track heap allocations of AST symbols so we can safely free a compilation's AST
+     * without accidentally deleting static/singleton symbol objects. */
+    static void* operator new(std::size_t size);
+    static void operator delete(void* ptr) noexcept;
 };
 
 
@@ -310,7 +316,25 @@ class list_c: public symbol_c {
     virtual void remove_element(int pos = 0);
      /* remove all elements from list. Does not delete the elements in the list! */ 
     virtual void clear(void);
+
+    /* list_c owns its internal array (but not the pointed-to symbols). */
+    virtual ~list_c(void);
 };
+
+/* -------------------------------------------------------------------------- */
+/* Modern (C++17) compilation lifetime helpers                                */
+/* -------------------------------------------------------------------------- */
+namespace matiec {
+  /* C string pool used by the lexer/parser to keep token values and filenames
+   * alive for the duration of a compilation (and then free them in one shot). */
+  char* cstr_pool_strdup(const char* s);
+  char* cstr_pool_take(char* s);
+  void  cstr_pool_clear() noexcept;
+
+  /* Delete all heap-allocated AST nodes reachable from one or more roots. */
+  void ast_delete(symbol_c* root) noexcept;
+  void ast_delete(symbol_c* root1, symbol_c* root2) noexcept;
+} // namespace matiec
 
 
 

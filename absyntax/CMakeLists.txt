@@ -1,6 +1,7 @@
 # absyntax - Abstract Syntax Tree definitions
 add_library(absyntax STATIC
     absyntax.cc
+    ast_memory.cc
     visitor.cc
 )
 
