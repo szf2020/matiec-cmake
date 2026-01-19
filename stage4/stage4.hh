@@ -40,6 +40,12 @@
 #define _STAGE4_HH
 
 #include "../absyntax/absyntax.hh"
+#include <stdexcept>
+
+/* Used to abort code generation without terminating the whole process. */
+struct stage4_codegen_error : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 
 
 void stage4err(const char *stage4_generator_id, symbol_c *symbol1, symbol_c *symbol2, const char *errmsg, ...);

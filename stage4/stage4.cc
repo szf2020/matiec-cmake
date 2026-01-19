@@ -43,10 +43,15 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdarg>
+#include <cstdlib>
+#include <exception>
+#include <memory>
 
 #include "stage4.hh"
 #include "../main.hh" // required for ERROR() and ERROR_MSG() macros.
+#include "matiec/error.hpp"
 
 
 
@@ -58,6 +63,40 @@
 void stage4err(const char *stage4_generator_id, symbol_c *symbol1, symbol_c *symbol2, const char *errmsg, ...) {
     va_list argptr;
     va_start(argptr, errmsg); /* second argument is last fixed pamater of stage4err() */
+
+    /* Bridge to ErrorReporter (for library/C API consumers). */
+    {
+      char msg_buf[2048];
+      msg_buf[0] = '\0';
+      va_list argptr_copy;
+      va_copy(argptr_copy, argptr);
+      std::vsnprintf(msg_buf, sizeof(msg_buf), errmsg, argptr_copy);
+      va_end(argptr_copy);
+
+      std::optional<matiec::SourceLocation> loc = std::nullopt;
+      if ((symbol1 != NULL) && (symbol2 != NULL) && (FIRST_(symbol1,symbol2)->first_file != NULL)) {
+        matiec::SourceLocation sl;
+        sl.filename = FIRST_(symbol1,symbol2)->first_file;
+        sl.line = FIRST_(symbol1,symbol2)->first_line;
+        sl.column = FIRST_(symbol1,symbol2)->first_column;
+        if (sl.isValid()) {
+          loc = sl;
+        }
+      }
+
+      std::string full_msg;
+      if (stage4_generator_id != NULL) {
+        full_msg = std::string(stage4_generator_id) + ": " + msg_buf;
+      } else {
+        full_msg = msg_buf;
+      }
+
+      matiec::globalErrorReporter().report(
+          matiec::ErrorSeverity::Error,
+          matiec::ErrorCategory::CodeGen,
+          std::move(full_msg),
+          loc);
+    }
 
     if ((symbol1 != NULL) && (symbol2 != NULL))
       fprintf(stderr, "%s:%d-%d..%d-%d: ",
@@ -81,7 +120,7 @@ stage4out_c::stage4out_c(std::string indent_level):
   allow_output = true;
 }
 
-stage4out_c::stage4out_c(const char *dir, const char *radix, const char *extension, std::string indent_level) {	
+stage4out_c::stage4out_c(const char *dir, const char *radix, const char *extension, std::string indent_level) {
   std::string filename(radix);
   filename += ".";
   filename += extension;
@@ -93,8 +132,13 @@ stage4out_c::stage4out_c(const char *dir, const char *radix, const char *extensi
   filepath += filename;
   std::fstream *file = new std::fstream(filepath.c_str(), std::fstream::out);
   if(file->fail()){
-    std::cerr << "Cannot open " << filename << " for write access \n";
-    exit(EXIT_FAILURE);
+    std::string msg = "Cannot open " + filepath + " for write access";
+    matiec::globalErrorReporter().report(
+        matiec::ErrorSeverity::Error,
+        matiec::ErrorCategory::IO,
+        msg);
+    delete file;
+    throw stage4_codegen_error(msg);
   }else{
     std::cout << filename << "\n";
   }
@@ -242,14 +286,38 @@ void delete_code_generator(visitor_c *code_generator);
 
 int stage4(symbol_c *tree_root, const char *builddir) {
   stage4out_c s4o;
-  visitor_c *generate_code = new_code_generator(&s4o, builddir);
+  struct generator_deleter {
+    void operator()(visitor_c *p) const noexcept {
+      if (p) delete_code_generator(p);
+    }
+  };
 
-  if (NULL == generate_code) ERROR;
+  std::unique_ptr<visitor_c, generator_deleter> generate_code(new_code_generator(&s4o, builddir));
+  if (generate_code == NULL) {
+    matiec::globalErrorReporter().report(
+        matiec::ErrorSeverity::Fatal,
+        matiec::ErrorCategory::Internal,
+        "Failed to create stage4 code generator");
+    return -1;
+  }
 
-  tree_root->accept(*generate_code);
-
-  delete_code_generator(generate_code);
+  try {
+    tree_root->accept(*generate_code);
+  } catch (const stage4_codegen_error&) {
+    return -1;
+  } catch (const std::exception& e) {
+    matiec::globalErrorReporter().report(
+        matiec::ErrorSeverity::Fatal,
+        matiec::ErrorCategory::Internal,
+        std::string("Unhandled exception in stage4: ") + e.what());
+    return -1;
+  } catch (...) {
+    matiec::globalErrorReporter().report(
+        matiec::ErrorSeverity::Fatal,
+        matiec::ErrorCategory::Internal,
+        "Unhandled non-standard exception in stage4");
+    return -1;
+  }
 
   return 0;
 }
-

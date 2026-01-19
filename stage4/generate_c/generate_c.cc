@@ -53,7 +53,10 @@
 
 
 
-#define STAGE4_ERROR(symbol1, symbol2, ...) {stage4err("while generating C code", symbol1, symbol2, __VA_ARGS__); exit(EXIT_FAILURE);}
+#define STAGE4_ERROR(symbol1, symbol2, ...) do { \
+  stage4err("while generating C code", symbol1, symbol2, __VA_ARGS__); \
+  throw stage4_codegen_error("stage4 code generation error"); \
+} while (0)
 
 
 /* Macros to access the constant value of each expression (if it exists) from the annotation introduced to the symbol_c object by constant_folding_c in stage3! */
@@ -2650,5 +2653,4 @@ class generate_c_c: public iterator_visitor_c {
 
 visitor_c *new_code_generator(stage4out_c *s4o, const char *builddir)  {return new generate_c_c(s4o, builddir);}
 void delete_code_generator(visitor_c *code_generator) {delete code_generator;}
-
 
