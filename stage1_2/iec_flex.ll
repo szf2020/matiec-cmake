@@ -164,6 +164,13 @@ int yylex_destroy(void);
  */
 const char *current_filename = NULL;
 
+/* Location of the last fully-matched `{interval}` token. Used so lexer-side
+ * interval failures can still point at the correct source range instead of the
+ * internal '#' marker injected by `unput_and_mark()`.
+ */
+static YYLTYPE last_interval_loc;
+static bool last_interval_loc_valid = false;
+
 
 
 /* Variable defined by the bison parser.
@@ -529,6 +536,8 @@ int GetNextChar(char *b, int maxBuffer);
 
 /* we are parsing a TIME# literal. We must not return any {identifier} tokens. */
 %x time_literal_state
+/* Swallow the remainder of an interval literal after a lexer-detected error. */
+%x erroneous_interval_state
 
 /* we are parsing a comment. */
 %x comment_state
@@ -1860,7 +1869,7 @@ EXIT		return EXIT;		/* Keyword */
 	/* B 1.2.3.1 - Duration */
 	/************************/
 {fixed_point}		{yylval.ID=matiec::cstr_pool_strdup(std::string_view(yytext, static_cast<size_t>(yyleng))); return fixed_point_token;}   
-{interval}		{/*fprintf(stderr, "entering time_literal_state ##%s##\n", yytext);*/ unput_and_mark('#'); yy_push_state(time_literal_state);}
+{interval}		{/*fprintf(stderr, "entering time_literal_state ##%s##\n", yytext);*/ last_interval_loc = yylloc; last_interval_loc_valid = true; unput_and_mark('#'); yy_push_state(time_literal_state);}
 {erroneous_interval}	{return erroneous_interval_token;}
 
 <time_literal_state>{
@@ -1876,9 +1885,23 @@ EXIT		return EXIT;		/* Keyword */
 {fixed_point}ms		{yylval.ID=matiec::cstr_pool_strdup(std::string_view(yytext, static_cast<size_t>(yyleng))); yylval.ID[yyleng-2] = '\0'; return fixed_point_ms_token;}
 
 _			/* do nothing - eat it up!*/
-\#			{/*fprintf(stderr, "popping from time_literal_state (###)\n");*/ yy_pop_state(); return end_interval_token;}
-.			{/*fprintf(stderr, "time_literal_state: found invalid character '%s'. Aborting!\n", yytext);*/ ERROR;}
-\n			{ERROR;}
+\#			{/*fprintf(stderr, "popping from time_literal_state (###)\n");*/ last_interval_loc_valid = false; yy_pop_state(); return end_interval_token;}
+.			{/*fprintf(stderr, "time_literal_state: found invalid character '%s'.\n", yytext);*/ yy_push_state(erroneous_interval_state);}
+\n			{yy_push_state(erroneous_interval_state);}
+}
+
+<erroneous_interval_state>{
+[^#\n]+			/* discard remainder of malformed interval */
+\n			/* discard */
+\#			{
+			  if (last_interval_loc_valid) {
+			    yylloc = last_interval_loc;
+			  }
+			  last_interval_loc_valid = false;
+			  yy_pop_state(); /* erroneous_interval_state */
+			  yy_pop_state(); /* time_literal_state */
+			  return erroneous_interval_token;
+			}
 }
 	/*******************************/
 	/* B.1.2.2   Character Strings */

@@ -8764,8 +8764,8 @@ NULL
 extern const char *INCLUDE_DIRECTORIES[];
 
 
-static int parse_files(const char *libfilename, const char *filename) {
-  /* first parse the standard library file... */  
+static int parse_files(const char *libfilename, const char *filename) {  
+  /* first parse the standard library file... */
   /*   Do not debug the standard library, even if debug flag is set!
   #if YYDEBUG
     yydebug = 1;
@@ -8776,6 +8776,16 @@ static int parse_files(const char *libfilename, const char *filename) {
     std::string errmsg("Error opening library file ");
     errmsg += libfilename;
     perror(errmsg.c_str());
+
+    std::string detail = errmsg;
+    if (errno != 0) {
+      detail += ": ";
+      detail += strerror(errno);
+    }
+    matiec::globalErrorReporter().report(
+        matiec::ErrorSeverity::Error,
+        matiec::ErrorCategory::IO,
+        std::move(detail));
     /* we give up... */
     return -1;
   }
@@ -8815,6 +8825,16 @@ static int parse_files(const char *libfilename, const char *filename) {
     std::string errmsg("Error opening main file ");
     errmsg += filename;
     perror(errmsg.c_str());
+
+    std::string detail = errmsg;
+    if (errno != 0) {
+      detail += ": ";
+      detail += strerror(errno);
+    }
+    matiec::globalErrorReporter().report(
+        matiec::ErrorSeverity::Error,
+        matiec::ErrorCategory::IO,
+        std::move(detail));
     return -3;
   }
 

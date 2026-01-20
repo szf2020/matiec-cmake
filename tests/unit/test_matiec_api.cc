@@ -357,5 +357,5 @@ TEST_F(MatiecApiTest, AcceptsNullOptions) {
     fs::current_path(old_cwd);
 
     // Should not crash; most likely fails due to missing include dir from this cwd.
-    EXPECT_EQ(result, MATIEC_ERROR_PARSE);
+    EXPECT_EQ(result, MATIEC_ERROR_IO);
 }
