@@ -21,33 +21,19 @@
 
 #include "main.hh"
 #include "matiec/error.hpp"
+#include "matiec/format.hpp"
 #include <cstdio>
 #include <cstdarg>
-#include <vector>
 
 /* Define the global runtime_options variable */
 runtime_options_t runtime_options;
 
 /* error_exit function - called on internal compiler errors */
-void error_exit(const char *file_name, int line_no, const char *errmsg, ...) {  
+void error_exit(const char *file_name, int line_no, const char *errmsg, ...) {
     va_list argptr;
     va_start(argptr, errmsg);
 
-    std::string message;
-    if (errmsg != nullptr) {
-        va_list argptr_copy;
-        va_copy(argptr_copy, argptr);
-        const int required = std::vsnprintf(nullptr, 0, errmsg, argptr_copy);
-        va_end(argptr_copy);
-
-        if (required >= 0) {
-            std::vector<char> buffer(static_cast<size_t>(required) + 1);
-            std::vsnprintf(buffer.data(), buffer.size(), errmsg, argptr);
-            message.assign(buffer.data(), static_cast<size_t>(required));
-        } else {
-            message = errmsg;
-        }
-    }
+    std::string message = (errmsg != nullptr) ? matiec::vformat(errmsg, argptr) : std::string();
 
     va_end(argptr);
 
