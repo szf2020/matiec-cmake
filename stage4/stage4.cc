@@ -113,7 +113,7 @@ void stage4err(const char *stage4_generator_id, symbol_c *symbol1, symbol_c *sym
 
 
 stage4out_c::stage4out_c(std::string indent_level):
-	m_file(NULL) {
+  m_file(nullptr) {
   out = &std::cout;
   this->indent_level = indent_level;
   this->indent_spaces = "";
@@ -130,30 +130,27 @@ stage4out_c::stage4out_c(const char *dir, const char *radix, const char *extensi
     filepath += "/";
   }
   filepath += filename;
-  std::fstream *file = new std::fstream(filepath.c_str(), std::fstream::out);
+  auto file = std::make_unique<std::fstream>(filepath.c_str(), std::fstream::out);
   if(file->fail()){
-    std::string msg = "Cannot open " + filepath + " for write access";
+    std::string msg = "Cannot open " + filepath + " for write access";    
     matiec::globalErrorReporter().report(
         matiec::ErrorSeverity::Error,
         matiec::ErrorCategory::IO,
         msg);
-    delete file;
     throw stage4_codegen_error(msg);
   }else{
     std::cout << filename << "\n";
   }
-  out = file;
-  m_file = file;
+  out = file.get();
+  m_file = std::move(file);
   this->indent_level = indent_level;
   this->indent_spaces = "";
   allow_output = true;
 }
 
 stage4out_c::~stage4out_c(void) {
-  if(m_file)
-  {
+  if (m_file) {
     m_file->close();
-    delete m_file;
   }
 }
 

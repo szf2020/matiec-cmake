@@ -40,6 +40,10 @@
 #define _STAGE4_HH
 
 #include "../absyntax/absyntax.hh"
+#include <fstream>
+#include <memory>
+#include <ostream>
+#include <string>
 #include <stdexcept>
 #include <string_view>
 
@@ -96,7 +100,7 @@ class stage4out_c {
 
   protected:
     std::ostream *out;
-    std::fstream *m_file;
+    std::unique_ptr<std::fstream> m_file;
     
     /* A flag to tell whether to really print to the file, or to ignore any request to print to the file */
     /* This is used to implement the no_code_generation pragmas, that lets the user tell the compiler
