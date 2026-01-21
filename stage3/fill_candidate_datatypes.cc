@@ -694,9 +694,19 @@ symbol_c *fill_candidate_datatypes_c::base_type(symbol_c *symbol) {
 /***************************/
 /* main entry function! */
 void *fill_candidate_datatypes_c::visit(library_c *symbol) {
-	symbol->accept(populate_globalenumvalue_symtable);
-	/* Now let the base class iterator_visitor_c iterate through all the library elements */
-	return iterator_visitor_c::visit(symbol);  
+        // These tables store raw pointers into the AST. Clear them at the start
+        // of each compilation to avoid use-after-free across in-process runs.
+        global_enumerated_value_symtable.reset();
+        local_enumerated_value_symtable.reset();
+
+        symbol->accept(populate_globalenumvalue_symtable);
+        /* Now let the base class iterator_visitor_c iterate through all the library elements */
+        void *res = iterator_visitor_c::visit(symbol);
+
+        // Do not retain dangling pointers once the analysis is complete.
+        global_enumerated_value_symtable.reset();
+        local_enumerated_value_symtable.reset();
+        return res;
 }
 
 
@@ -2377,7 +2387,6 @@ void *fill_candidate_datatypes_c::visit(repeat_statement_c *symbol) {
 		symbol->statement_list->accept(*this);
 	return NULL;
 }
-
 
 
 

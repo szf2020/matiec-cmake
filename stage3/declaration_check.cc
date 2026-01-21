@@ -125,7 +125,12 @@
 #include <set>
 class check_extern_c: public iterator_visitor_c {
   public:
-  
+
+    static void reset_state() {
+      error_count = 0;
+      checked_decl.clear();
+    }
+
   private:
     int current_display_error_level;
     symbol_c *current_pou_decl;
@@ -276,6 +281,10 @@ declaration_check_c::declaration_check_c(symbol_c *ignore) {
   current_pou_decl = NULL;
   current_resource_decl = NULL;
   error_count = 0;
+
+  // These are static to avoid re-checking shared declarations within a single
+  // stage3 run, but must not persist across independent compilations.
+  check_extern_c::reset_state();
 }
 
 declaration_check_c::~declaration_check_c(void) {
