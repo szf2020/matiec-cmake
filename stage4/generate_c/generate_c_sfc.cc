@@ -22,6 +22,8 @@
  * used in safety-critical situations without a full and competent review.
  */
 
+#include <memory>
+
 typedef struct
 {
   transition_c *symbol;
@@ -48,10 +50,10 @@ class generate_c_sfc_elements_c: public generate_c_base_and_typeid_c {
     } sfcgeneration_t;
 
   private:
-    generate_c_il_c *generate_c_il;
-    generate_c_st_c *generate_c_st;
-    generate_c_SFC_IL_ST_c *generate_c_code;
-    search_var_instance_decl_c *search_var_instance_decl;
+    std::unique_ptr<generate_c_il_c> generate_c_il;
+    std::unique_ptr<generate_c_st_c> generate_c_st;
+    std::unique_ptr<generate_c_SFC_IL_ST_c> generate_c_code;
+    std::unique_ptr<search_var_instance_decl_c> search_var_instance_decl;
     
     int transition_number;
     std::list<TRANSITION> transition_list;
@@ -64,19 +66,15 @@ class generate_c_sfc_elements_c: public generate_c_base_and_typeid_c {
   public:
     generate_c_sfc_elements_c(stage4out_c *s4o_ptr, symbol_c *name, symbol_c *scope, const char *variable_prefix = NULL)
     : generate_c_base_and_typeid_c(s4o_ptr) {
-      generate_c_il = new generate_c_il_c(s4o_ptr, name, scope, variable_prefix);
-      generate_c_st = new generate_c_st_c(s4o_ptr, name, scope, variable_prefix);
-      generate_c_code = new generate_c_SFC_IL_ST_c(s4o_ptr, name, scope, variable_prefix);
-      search_var_instance_decl = new search_var_instance_decl_c(scope);
+      generate_c_il = std::make_unique<generate_c_il_c>(s4o_ptr, name, scope, variable_prefix);
+      generate_c_st = std::make_unique<generate_c_st_c>(s4o_ptr, name, scope, variable_prefix);
+      generate_c_code = std::make_unique<generate_c_SFC_IL_ST_c>(s4o_ptr, name, scope, variable_prefix);
+      search_var_instance_decl = std::make_unique<search_var_instance_decl_c>(scope);
       this->set_variable_prefix(variable_prefix);
     }
     
     ~generate_c_sfc_elements_c(void) {
       transition_list.clear();
-      delete generate_c_il;
-      delete generate_c_st;
-      delete generate_c_code;
-      delete search_var_instance_decl;
     }
 
 
@@ -676,22 +674,20 @@ class generate_c_sfc_c: public generate_c_base_and_typeid_c {
   
   private:
     std::list<VARIABLE> variable_list;
-
-    generate_c_sfc_elements_c *generate_c_sfc_elements;
-    search_var_instance_decl_c *search_var_instance_decl;
+    
+    std::unique_ptr<generate_c_sfc_elements_c> generate_c_sfc_elements;
+    std::unique_ptr<search_var_instance_decl_c> search_var_instance_decl;
     
   public:
     generate_c_sfc_c(stage4out_c *s4o_ptr, symbol_c *name, symbol_c *scope, const char *variable_prefix = NULL)
     : generate_c_base_and_typeid_c(s4o_ptr) {
-      generate_c_sfc_elements = new generate_c_sfc_elements_c(s4o_ptr, name, scope, variable_prefix);
-      search_var_instance_decl = new search_var_instance_decl_c(scope);
+      generate_c_sfc_elements = std::make_unique<generate_c_sfc_elements_c>(s4o_ptr, name, scope, variable_prefix);
+      search_var_instance_decl = std::make_unique<search_var_instance_decl_c>(scope);
       this->set_variable_prefix(variable_prefix);
     }
-  
+
     virtual ~generate_c_sfc_c(void) {
       variable_list.clear();
-      delete generate_c_sfc_elements;
-      delete search_var_instance_decl;
     }
 
     bool is_variable(symbol_c *symbol) {
