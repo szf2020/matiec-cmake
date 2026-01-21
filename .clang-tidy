@@ -1,0 +1,23 @@
+---
+# clang-tidy baseline
+#
+# This is intentionally conservative: enable a small set of broadly-useful checks
+# and keep it opt-in via the CMake option `MATIEC_ENABLE_CLANG_TIDY`.
+#
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-make-unique
+
+WarningsAsErrors: ""
+
+# Only analyze headers that belong to this repository (avoid third-party noise).
+HeaderFilterRegex: "^(.*[\\\\/])?(absyntax|absyntax_utils|stage1_2|stage3|stage4|src|include)[\\\\/]"
+
+FormatStyle: file
+...
+
