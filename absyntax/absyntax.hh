@@ -319,14 +319,14 @@ class list_c: public symbol_c {
     /* WARNING: only use this method for debugging purposes!! */
     virtual const char *absyntax_cname(void) {return "list_c";};
 
-    int c,n; /* c: current capacity of list (malloc'd memory);  n: current number of elements in list */
+    int c,n; /* c: current reserved capacity; n: current number of elements */
   private:
 //     symbol_c **elements;
     typedef struct {
       const char *token_value;
       symbol_c   *symbol;
     } element_entry_t;
-    element_entry_t *elements;
+    std::vector<element_entry_t> elements;
     
 
   public:

@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>	/* required for exit() */
 #include <string.h>
+#include <new> /* std::bad_alloc */
 
 #include "absyntax.hh"
 //#include "../stage1_2/iec.hh" /* required for BOGUS_TOKEN_ID, etc... */
@@ -84,8 +85,12 @@ list_c::list_c(
                int ll, int lc, const char *lfile, long int lorder)
   :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder),c(LIST_CAP_INIT) {
   n = 0;
-  elements = (element_entry_t*)malloc(LIST_CAP_INIT*sizeof(element_entry_t));
-  if (NULL == elements) ERROR_MSG("out of memory");
+  try {
+    elements.reserve(static_cast<size_t>(LIST_CAP_INIT));
+  } catch (const std::bad_alloc&) {
+    ERROR_MSG("out of memory");
+  }
+  c = static_cast<int>(elements.capacity());
 }
 
 
@@ -94,8 +99,12 @@ list_c::list_c(symbol_c *elem,
                int ll, int lc, const char *lfile, long int lorder)
   :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder),c(LIST_CAP_INIT) { 
   n = 0;
-  elements = (element_entry_t*)malloc(LIST_CAP_INIT*sizeof(element_entry_t));
-  if (NULL == elements) ERROR_MSG("out of memory");
+  try {
+    elements.reserve(static_cast<size_t>(LIST_CAP_INIT));
+  } catch (const std::bad_alloc&) {
+    ERROR_MSG("out of memory");
+  }
+  c = static_cast<int>(elements.capacity());
   add_element(elem); 
 }
 
@@ -139,14 +148,23 @@ void list_c::add_element(symbol_c *elem, symbol_c *token) {
 }
 
 void list_c::add_element(symbol_c *elem, const char *token_value) {
-  if (c <= n)
-    if (!(elements=(element_entry_t*)realloc(elements,(c+=LIST_CAP_INCR)*sizeof(element_entry_t))))
+  if (c <= n) {
+    c += LIST_CAP_INCR;
+    try {
+      elements.reserve(static_cast<size_t>(c));
+    } catch (const std::bad_alloc&) {
       ERROR_MSG("out of memory");
-  //elements[n++] = {token_value, elem};  // only available from C++11 onwards, best not use it for now.
-  elements[n].symbol      = elem;
-  elements[n].token_value = token_value;
-  n++;
-  
+    }
+    c = static_cast<int>(elements.capacity());
+  }
+
+  try {
+    elements.push_back({token_value, elem});
+  } catch (const std::bad_alloc&) {
+    ERROR_MSG("out of memory");
+  }
+  n = static_cast<int>(elements.size());
+
   if (NULL == elem) return;
   /* Sometimes add_element() is called in stage3 or stage4 to temporarily add an AST symbol to the list.
    * Since this symbol already belongs in some other place in the aST, it will have the 'parent' pointer set, 
@@ -221,7 +239,8 @@ void list_c::remove_element(int pos) {
   /* Shift all elements down one position, starting at the entry to delete. */
   for (int i = pos; i < n-1; i++) elements[i] = elements[i+1];
   /* corrent the new size */
-  n--;
+  elements.pop_back();
+  n = static_cast<int>(elements.size());
   /* elements = (symbol_c **)realloc(elements, n * sizeof(element_entry_t)); */
   /* TODO: adjust the location parameters, taking into account the removed element. */
 }
@@ -231,6 +250,7 @@ void list_c::remove_element(int pos) {
 /* Remove all elements from list. */
 /**********************************/    
 void list_c::clear(void) {
+  elements.clear();
   n = 0;
   /* TODO: adjust the location parameters, taking into account the removed element. */
 }
@@ -372,5 +392,3 @@ class_name_c::class_name_c(symbol_c *ref1,							\
   if  (NULL != ref6)   ref6->parent = this;							\
 }												\
 void *class_name_c::accept(visitor_c &visitor) {return visitor.visit(this);}
-
-

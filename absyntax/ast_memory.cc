@@ -173,15 +173,7 @@ void symbol_c::operator delete(void* ptr) noexcept {
 /* list_c owned storage                                                      */
 /* -------------------------------------------------------------------------- */
 
-list_c::~list_c(void) {
-    // list_c does not own the pointed-to symbols, but it does own its internal array.
-    if (elements) {
-        std::free(elements);
-        elements = nullptr;
-    }
-    c = 0;
-    n = 0;
-}
+list_c::~list_c(void) = default;
 
 /* -------------------------------------------------------------------------- */
 /* matiec helpers exposed via absyntax.hh                                      */
