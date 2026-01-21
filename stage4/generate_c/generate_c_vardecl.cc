@@ -659,10 +659,9 @@ class generate_c_structure_initialization_c: public generate_c_base_and_typeid_c
         initialization_analyzer_c initialization_analyzer(element_value);
             
         if (initialization_analyzer.get_initialization_type() == initialization_analyzer_c::struct_it) {
-          generate_c_structure_initialization_c *structure_initialization = new generate_c_structure_initialization_c(&s4o);
-          structure_initialization->init_structure_default(current_element_type);
-          structure_initialization->init_structure_values(element_value);
-          delete structure_initialization;
+          generate_c_structure_initialization_c structure_initialization(&s4o);
+          structure_initialization.init_structure_default(current_element_type);
+          structure_initialization.init_structure_values(element_value);
         }
         else {
           element_value->accept(*this);
@@ -675,12 +674,11 @@ class generate_c_structure_initialization_c: public generate_c_base_and_typeid_c
     /* helper symbol for array_initialization */
     /* array_initial_elements_list ',' array_initial_elements */
     void *visit(array_initial_elements_list_c *symbol) {
-      generate_c_array_initialization_c *array_initialization = new generate_c_array_initialization_c(&s4o);
-      array_initialization->init_array_size(current_element_type);
+      generate_c_array_initialization_c array_initialization(&s4o);
+      array_initialization.init_array_size(current_element_type);
       if (current_element_default_value != NULL)
-        array_initialization->set_array_default_initialisation(current_element_default_value);
-      array_initialization->init_array_values(symbol);
-      delete array_initialization;
+        array_initialization.set_array_default_initialisation(current_element_default_value);
+      array_initialization.init_array_values(symbol);
       return NULL;
     }
 
@@ -690,10 +688,9 @@ class generate_c_structure_initialization_c: public generate_c_base_and_typeid_c
 /* helper symbol for array_initialization */
 /* structure_element_initialization_list ',' structure_element_initialization */
 void *generate_c_array_initialization_c::visit(structure_element_initialization_list_c *symbol) {
-  generate_c_structure_initialization_c *structure_initialization = new generate_c_structure_initialization_c(&s4o);
-  structure_initialization->init_structure_default(array_base_type);
-  structure_initialization->init_structure_values(symbol);
-  delete structure_initialization;
+  generate_c_structure_initialization_c structure_initialization(&s4o);
+  structure_initialization.init_structure_default(array_base_type);
+  structure_initialization.init_structure_values(symbol);
   return NULL;
 }
 
@@ -1491,10 +1488,9 @@ void *visit(array_var_init_decl_c *symbol) {
 
   /* now to produce the c equivalent... */
   if (wanted_varformat == constructorinit_vf) {
-    generate_c_array_initialization_c *array_initialization = new generate_c_array_initialization_c(&s4o);
-    array_initialization->set_variable_prefix(get_variable_prefix());
-    array_initialization->init_array(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
-    delete array_initialization;
+    generate_c_array_initialization_c array_initialization(&s4o);
+    array_initialization.set_variable_prefix(get_variable_prefix());
+    array_initialization.init_array(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
   }
   else
     symbol->var1_list->accept(*this);
@@ -1524,10 +1520,9 @@ void *visit(structured_var_init_decl_c *symbol) {
 
   /* now to produce the c equivalent... */
   if (wanted_varformat == constructorinit_vf) {
-    generate_c_structure_initialization_c *structure_initialization = new generate_c_structure_initialization_c(&s4o);
-    structure_initialization->set_variable_prefix(get_variable_prefix());
-    structure_initialization->init_structure(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
-    delete structure_initialization;
+    generate_c_structure_initialization_c structure_initialization(&s4o);
+    structure_initialization.set_variable_prefix(get_variable_prefix());
+    structure_initialization.init_structure(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
   }
   else
     symbol->var1_list->accept(*this);
@@ -1633,10 +1628,9 @@ void *visit(array_var_declaration_c *symbol) {
 
   /* now to produce the c equivalent... */
   if (wanted_varformat == constructorinit_vf) {
-    generate_c_array_initialization_c *array_initialization = new generate_c_array_initialization_c(&s4o);
-    array_initialization->set_variable_prefix(get_variable_prefix());
-    array_initialization->init_array(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
-    delete array_initialization;
+    generate_c_array_initialization_c array_initialization(&s4o);
+    array_initialization.set_variable_prefix(get_variable_prefix());
+    array_initialization.init_array(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
   }
   else
     symbol->var1_list->accept(*this);
@@ -1652,10 +1646,9 @@ void *visit(array_var_declaration_c *symbol) {
 
 void *visit(array_initial_elements_list_c *symbol) {
   if (wanted_varformat == localinit_vf || wanted_varformat == constructorinit_vf) {
-    generate_c_array_initialization_c *array_initialization = new generate_c_array_initialization_c(&s4o);
-    array_initialization->init_array_size(this->current_var_type_symbol);
-    array_initialization->init_array_values(this->current_var_init_symbol);
-    delete array_initialization;
+    generate_c_array_initialization_c array_initialization(&s4o);
+    array_initialization.init_array_size(this->current_var_type_symbol);
+    array_initialization.init_array_values(this->current_var_init_symbol);
   }
   return NULL;
 }
@@ -1674,10 +1667,9 @@ void *visit(structured_var_declaration_c *symbol) {
   update_type_init(symbol->structure_type_name);
 
   if (wanted_varformat == constructorinit_vf) {
-    generate_c_structure_initialization_c *structure_initialization = new generate_c_structure_initialization_c(&s4o);
-    structure_initialization->set_variable_prefix(get_variable_prefix());
-    structure_initialization->init_structure(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
-    delete structure_initialization;
+    generate_c_structure_initialization_c structure_initialization(&s4o);
+    structure_initialization.set_variable_prefix(get_variable_prefix());
+    structure_initialization.init_structure(symbol->var1_list, this->current_var_type_symbol, this->current_var_init_symbol);
   }
   else
     /* now to produce the c equivalent... */
@@ -1694,10 +1686,9 @@ void *visit(structured_var_declaration_c *symbol) {
 
 void *visit(structure_element_initialization_list_c *symbol) {
   if (wanted_varformat == localinit_vf || wanted_varformat == constructorinit_vf) {
-    generate_c_structure_initialization_c *structure_initialization = new generate_c_structure_initialization_c(&s4o);
-    structure_initialization->init_structure_default(this->current_var_type_symbol);
-    structure_initialization->init_structure_values(this->current_var_init_symbol);
-    delete structure_initialization;
+    generate_c_structure_initialization_c structure_initialization(&s4o);
+    structure_initialization.init_structure_default(this->current_var_type_symbol);
+    structure_initialization.init_structure_values(this->current_var_init_symbol);
   }
   return NULL;
 }
@@ -2821,5 +2812,4 @@ SYM_REF2(fb_initialization_c, function_block_type_name, structure_initialization
 
 
 }; /* generate_c_vardecl_c */
-
 
