@@ -86,6 +86,35 @@
 #include "matiec/error.hpp"
 #include "matiec/format.hpp"
 
+namespace {
+class compilation_cleanup_guard final {
+public:
+  compilation_cleanup_guard(symbol_c *&tree_root, symbol_c *&ordered_tree_root) noexcept
+      : tree_root_(tree_root), ordered_tree_root_(ordered_tree_root) {}
+
+  compilation_cleanup_guard(const compilation_cleanup_guard &) = delete;
+  compilation_cleanup_guard &operator=(const compilation_cleanup_guard &) = delete;
+
+  ~compilation_cleanup_guard() noexcept {
+    // These global tables store raw pointers into the AST; clear them before
+    // freeing the compilation's AST.
+    absyntax_utils_reset();
+
+    // Free the AST (including any reordered wrapper produced by stage3) and
+    // then release lexer-owned strings used by tokens/filenames.
+    matiec::ast_delete(tree_root_, ordered_tree_root_);
+    matiec::cstr_pool_clear();
+
+    // Clear lexer/parser symbol tables and flags for the next run.
+    stage1_2_reset();
+  }
+
+private:
+  symbol_c *&tree_root_;
+  symbol_c *&ordered_tree_root_;
+};
+} // namespace
+
 
 #ifndef HGVERSION
    #define HGVERSION ""
@@ -138,10 +167,10 @@ runtime_options_t runtime_options;
 
 
 int main(int argc, char **argv) {
-  symbol_c *tree_root, *ordered_tree_root;
+  symbol_c *tree_root = nullptr, *ordered_tree_root = nullptr;
   char * builddir = NULL;
   int optres, errflg = 0;
-  int path_len;
+  size_t path_len = 0;
 
   /* Default values for the command line options... */
   runtime_options.allow_void_datatype     = false; /* disable: allow declaration of functions returning VOID  */
@@ -190,14 +219,14 @@ int main(int argc, char **argv) {
        *       In this way compiler front-end accepts paths with or without
        *       slash terminator.
        */
-      path_len = strlen(optarg) - 1;
-      if (optarg[path_len] == '\\') optarg[path_len]= '\0';
+      path_len = strlen(optarg);
+      if (path_len > 0 && optarg[path_len - 1] == '\\') optarg[path_len - 1] = '\0';
       runtime_options.includedir = optarg;
       break;
     case 'T':
       /* NOTE: see note above */
-      path_len = strlen(optarg) - 1;
-      if (optarg[path_len] == '\\') optarg[path_len]= '\0';
+      path_len = strlen(optarg);
+      if (path_len > 0 && optarg[path_len - 1] == '\\') optarg[path_len - 1] = '\0';
       builddir = optarg;
       break;
     case 'O':
@@ -233,6 +262,9 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+  // Ensure compilation resources are released even on early returns/exceptions.
+  compilation_cleanup_guard cleanup(tree_root, ordered_tree_root);
+
 
   /***************************/
   /*   Run the compiler...   */
@@ -243,8 +275,9 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
 
   /* 2nd Pass */
-    /* basically loads some symbol tables to speed up look ups later on */
-  absyntax_utils_init(tree_root);  
+    /* basically loads some symbol tables to speed up look ups later on */      
+  absyntax_utils_reset();
+  absyntax_utils_init(tree_root);
     /* moved to bison, although it could perfectly well still be here instead of in bison code. */
   //add_en_eno_param_decl_c::add_to(tree_root);
 
