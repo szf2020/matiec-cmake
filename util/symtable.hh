@@ -37,6 +37,7 @@
 #include "../absyntax/absyntax.hh"
 
 #include <map>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -60,12 +61,20 @@ template<typename value_type> class symtable_c {
 
   private:
       /* pointer to symbol table of the next inner scope */
-    symtable_c *inner_scope;
+    std::unique_ptr<symtable_c> inner_scope;
 
   public:
     symtable_c(void);
 
-    void clear(void); /* clear all entries... */
+    /* Deep-copy scopes so callers can safely pass symtables by value. */
+    symtable_c(const symtable_c& other);
+    symtable_c& operator=(const symtable_c& other);
+    symtable_c(symtable_c&&) noexcept = default;
+    symtable_c& operator=(symtable_c&&) noexcept = default;
+    ~symtable_c() = default;
+
+    void clear(void); /* clear all entries (all scopes) */
+    void reset(void) { clear(); } /* compatibility with dsymtable_c API */
 
     void push(void); /* create new inner scope */
     int  pop(void);  /* clear most inner scope */

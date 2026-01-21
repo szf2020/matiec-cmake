@@ -34,7 +34,7 @@
 
 #include <iostream>
 #include "symtable.hh"
-#include "../main.hh" // required for ERROR() and ERROR_MSG() macros.
+#include "../main.hh" // required for ERROR() and ERROR_MSG() macros.     
 
 
 
@@ -42,13 +42,37 @@
 
 
 template<typename value_type>
-symtable_c<value_type>::symtable_c(void) {inner_scope = NULL;}
+symtable_c<value_type>::symtable_c(void) : inner_scope(nullptr) {}
+
+template<typename value_type>
+symtable_c<value_type>::symtable_c(const symtable_c& other)
+    : _base(other._base) {
+  if (other.inner_scope) {
+    inner_scope = std::make_unique<symtable_c>(*other.inner_scope);
+  }
+}
+
+template<typename value_type>
+symtable_c<value_type>& symtable_c<value_type>::operator=(const symtable_c& other) {
+  if (this == &other) {
+    return *this;
+  }
+
+  _base = other._base;
+  if (other.inner_scope) {
+    inner_scope = std::make_unique<symtable_c>(*other.inner_scope);
+  } else {
+    inner_scope.reset();
+  }
+  return *this;
+}
 
 
  /* clear all entries... */
 template<typename value_type>
 void symtable_c<value_type>::clear(void) {
   _base.clear();
+  inner_scope.reset();
 }
 
  /* create new inner scope */
@@ -57,7 +81,7 @@ void symtable_c<value_type>::push(void) {
   if (inner_scope != NULL) {
     inner_scope->push();
   } else {
-    inner_scope = new symtable_c();
+    inner_scope = std::make_unique<symtable_c>();
   }
 }
 
@@ -68,8 +92,7 @@ template<typename value_type>
 int symtable_c<value_type>::pop(void) {
   if (inner_scope != NULL) {
     if (inner_scope->pop() == 1) {
-      delete inner_scope;
-      inner_scope = NULL;
+      inner_scope.reset();
     }
     return 0;
   } else {
@@ -164,7 +187,7 @@ typename symtable_c<value_type>::iterator symtable_c<value_type>::begin(void) {r
 template<typename value_type>
 typename symtable_c<value_type>::iterator symtable_c<value_type>::find(const       char *identifier_str) {
   iterator i;
-  if ((inner_scope != NULL) && ((i = inner_scope->find(identifier_str)) != inner_scope->end()))  // NOTE: must use the end() value of the inner scope!
+  if ((inner_scope != NULL) && ((i = inner_scope->find(identifier_str)) != inner_scope->end()))  // NOTE: must use the end() value of the inner scope!    
       return i;  // found in the lower level
   /* if no lower level, or not found in lower level... */
   return _base.find(identifier_str);
@@ -174,7 +197,7 @@ typename symtable_c<value_type>::iterator symtable_c<value_type>::find(const    
 template<typename value_type>
 typename symtable_c<value_type>::iterator symtable_c<value_type>::find(std::string_view identifier_str) {
   iterator i;
-  if ((inner_scope != NULL) && ((i = inner_scope->find(identifier_str)) != inner_scope->end()))  // NOTE: must use the end() value of the inner scope!
+  if ((inner_scope != NULL) && ((i = inner_scope->find(identifier_str)) != inner_scope->end()))  // NOTE: must use the end() value of the inner scope!    
       return i;  // found in the lower level
   /* if no lower level, or not found in lower level... */
   return _base.find(identifier_str);
@@ -204,7 +227,6 @@ void symtable_c<value_type>::print(void) {
     inner_scope->print();
   }
 }
-
 
 
 
