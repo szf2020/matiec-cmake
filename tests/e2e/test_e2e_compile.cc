@@ -486,5 +486,13 @@ TEST_F(E2ECompileTest, OutputFormatIEC) {
     ASSERT_TRUE(writeFile(file, samples::MINIMAL_PROGRAM));
 
     auto result = matiec_compile_file(file.string().c_str(), &opts_, &result_);
-    EXPECT_EQ(result, MATIEC_OK);
+    EXPECT_EQ(result, MATIEC_OK) << "Error: " << (result_.error_message ? result_.error_message : "none");
+
+    // IEC generator writes a normalized IEC program to a single .iec file.
+    const auto out_file = temp_.path() / "iec_output.iec";
+    EXPECT_TRUE(fs::exists(out_file)) << "Expected IEC output file: " << out_file.string();
+
+    const auto content = readFile(out_file);
+    ASSERT_TRUE(content.has_value()) << "Failed to read IEC output file";
+    EXPECT_THAT(*content, ::testing::HasSubstr("PROGRAM"));
 }

@@ -160,7 +160,7 @@ set(MATIEC_CORE_LIBS
     stage1_2
     stage3
     stage4_c
-    stage4_iec
+    stage4_iec_alt
     absyntax
     absyntax_utils
 )

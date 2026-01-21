@@ -40,6 +40,11 @@
 #include <unistd.h>
 #endif
 
+// IEC generator entry points (built from stage4_iec_alt with renamed symbols).
+// These have C++ linkage (same as the rest of stage4).
+visitor_c* new_iec_code_generator(stage4out_c* s4o, const char* builddir);
+void delete_iec_code_generator(visitor_c* code_generator);
+
 static char* matiec_strdup(const char* s) {
     if (!s) return nullptr;
 #ifdef _WIN32
@@ -120,6 +125,91 @@ struct temp_file_guard {
         }
     }
 };
+
+static std::string path_stem(const char* path) {
+    if (!path || !*path) {
+        return "output";
+    }
+
+    std::string p(path);
+    const size_t sep = p.find_last_of("/\\");
+    std::string name = (sep == std::string::npos) ? p : p.substr(sep + 1);
+
+    const size_t dot = name.find_last_of('.');
+    if (dot != std::string::npos) {
+        name = name.substr(0, dot);
+    }
+
+    if (name.empty()) {
+        return "output";
+    }
+    return name;
+}
+
+static std::string join_dir_file(const char* dir, const std::string& filename) {
+    if (!dir || !*dir) {
+        return filename;
+    }
+    std::string out(dir);
+    out += "/";
+    out += filename;
+    return out;
+}
+
+static int stage4_generate_iec_to_file(symbol_c* tree_root,
+                                       const char* builddir,
+                                       const char* input_file) {
+    if (tree_root == nullptr) {
+        matiec::globalErrorReporter().report(
+            matiec::ErrorSeverity::Fatal,
+            matiec::ErrorCategory::Internal,
+            "stage4 IEC called with null AST root");
+        return -1;
+    }
+
+    const std::string radix = path_stem(input_file);
+
+    stage4out_c s4o(builddir, radix.c_str(), "iec");
+
+    struct generator_deleter {
+        void operator()(visitor_c* p) const noexcept {
+            if (p) {
+                delete_iec_code_generator(p);
+            }
+        }
+    };
+
+    std::unique_ptr<visitor_c, generator_deleter> generate_code(
+        new_iec_code_generator(&s4o, builddir));
+    if (generate_code == nullptr) {
+        matiec::globalErrorReporter().report(
+            matiec::ErrorSeverity::Fatal,
+            matiec::ErrorCategory::Internal,
+            "Failed to create stage4 IEC code generator");
+        return -1;
+    }
+
+    try {
+        tree_root->accept(*generate_code);
+    } catch (const stage4_codegen_error&) {
+        return -1;
+    } catch (const std::exception& e) {
+        matiec::globalErrorReporter().report(
+            matiec::ErrorSeverity::Fatal,
+            matiec::ErrorCategory::Internal,
+            std::string("Unhandled exception in stage4 IEC: ") + e.what());
+        return -1;
+    } catch (...) {
+        matiec::globalErrorReporter().report(
+            matiec::ErrorSeverity::Fatal,
+            matiec::ErrorCategory::Internal,
+            "Unhandled non-standard exception in stage4 IEC");
+        return -1;
+    }
+
+    s4o.flush();
+    return 0;
+}
 } // namespace
 
 extern "C" {
@@ -192,6 +282,30 @@ static void result_init(matiec_result_t *result) {
     result->error_file = nullptr;
     result->output_files = nullptr;
     result->output_file_count = 0;
+}
+
+static bool result_add_output_file(matiec_result_t* result, const std::string& path) {
+    if (!result) {
+        return false;
+    }
+
+    char* copy = matiec_strdup(path.c_str());
+    if (!copy) {
+        return false;
+    }
+
+    const int next_index = result->output_file_count;
+    char** new_list = static_cast<char**>(
+        realloc(result->output_files, sizeof(char*) * static_cast<size_t>(next_index + 1)));
+    if (!new_list) {
+        free(copy);
+        return false;
+    }
+
+    result->output_files = new_list;
+    result->output_files[next_index] = copy;
+    result->output_file_count = next_index + 1;
+    return true;
 }
 
 static matiec_error_t map_error_category(matiec::ErrorCategory category) {
@@ -350,11 +464,6 @@ MATIEC_API matiec_error_t matiec_compile_file(
         builddir = opts->output_dir;
     }
 
-    /* Set output format via stage4 options */
-    if (opts && opts->output_format == MATIEC_OUTPUT_IEC) {
-        stage4_parse_options(const_cast<char*>("IEC"));
-    }
-
     symbol_c *tree_root = nullptr;
     symbol_c *ordered_tree_root = nullptr;
     matiec_error_t ret = MATIEC_OK;
@@ -398,13 +507,26 @@ MATIEC_API matiec_error_t matiec_compile_file(
         cleanup.tree_root_owner().get_deleter().ordered_root = ordered_tree_root;
 
         /* Stage 4: Code generation */
-        if (stage4(ordered_tree_root, const_cast<char*>(builddir)) < 0) { 
-            result_set_error_from_reporter(
-                result,
-                MATIEC_ERROR_CODEGEN,
-                "Code generation failed");
-            ret = result->error_code;
-            return ret;
+        if (opts && opts->output_format == MATIEC_OUTPUT_IEC) {
+            if (stage4_generate_iec_to_file(ordered_tree_root, builddir, input_file) < 0) {
+                result_set_error_from_reporter(
+                    result,
+                    MATIEC_ERROR_CODEGEN,
+                    "IEC code generation failed");
+                ret = result->error_code;
+                return ret;
+            }
+
+            (void)result_add_output_file(result, join_dir_file(builddir, path_stem(input_file) + ".iec"));
+        } else {
+            if (stage4(ordered_tree_root, const_cast<char*>(builddir)) < 0) {
+                result_set_error_from_reporter(
+                    result,
+                    MATIEC_ERROR_CODEGEN,
+                    "Code generation failed");
+                ret = result->error_code;
+                return ret;
+            }
         }
 
         ret = MATIEC_OK;
