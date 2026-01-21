@@ -1,0 +1,25 @@
+---
+# clang-format configuration
+#
+# This repository contains a large amount of legacy code with mixed styles.
+# The goal of this file is to provide a consistent baseline for *new or touched*
+# code. Do NOT run clang-format over the whole repository in one go unless a
+# dedicated "format-only" change is explicitly planned and reviewed.
+#
+BasedOnStyle: LLVM
+Language: Cpp
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# Reduce churn in legacy files when formatting small edits.
+SortIncludes: false
+IncludeBlocks: Preserve
+ReflowComments: false
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+...
+
