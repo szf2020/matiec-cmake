@@ -15,6 +15,23 @@
  * @brief Implementation of the matiec C library API
  */
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+// Avoid the Windows GDI ERROR macro clashing with matiec's legacy ERROR macro
+// from main.hh (pulled in transitively by absyntax headers).
+#ifdef ERROR
+#undef ERROR
+#endif
+#else
+#include <unistd.h>
+#endif
+
 #include "matiec/matiec.h"
 #include "matiec/error.hpp"
 #include "matiec/string_utils.hpp"
@@ -33,12 +50,6 @@
 #include <string>
 #include <vector>
 #include <fstream>
-
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
 
 // IEC generator entry points (built from stage4_iec_alt with renamed symbols).
 // These have C++ linkage (same as the rest of stage4).

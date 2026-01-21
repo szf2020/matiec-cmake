@@ -63,6 +63,9 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 elseif(MSVC)
     # MSVC (fallback support)
     add_compile_options(/W3)
+    # Make source/execution character set explicit on Windows to avoid codepage
+    # warnings (e.g. C4819) and keep diagnostics reproducible across locales.
+    add_compile_options(/utf-8)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
