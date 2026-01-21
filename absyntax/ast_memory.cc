@@ -30,6 +30,18 @@ bool is_heap_symbol(const symbol_c* symbol) {
     return heap_symbols().find(const_cast<symbol_c*>(symbol)) != heap_symbols().end();
 }
 
+// Heap-allocated symbol objects that should live for the duration of the
+// process (e.g. singleton cached literals used during codegen).
+std::unordered_set<void*>& pinned_symbols() {
+    static std::unordered_set<void*> pinned;
+    return pinned;
+}
+
+bool is_pinned_symbol(const symbol_c* symbol) {
+    if (!symbol) return false;
+    return pinned_symbols().find(const_cast<symbol_c*>(symbol)) != pinned_symbols().end();
+}
+
 // Pool of C strings that must remain valid during a compilation (token values and
 // filenames produced by the lexer/parser). Cleared explicitly at compile end.
 std::vector<char*>& cstr_pool() {
@@ -108,15 +120,41 @@ void push_annotation_edges(symbol_c* symbol, std::vector<symbol_c*>& stack) {
     }
 }
 
+void delete_tracked_symbols() noexcept {
+    auto& symbols = heap_symbols();
+    if (symbols.empty()) return;
+
+    // Copy out first, since delete mutates heap_symbols().
+    std::vector<symbol_c*> to_delete;
+    to_delete.reserve(symbols.size());
+    for (void* ptr : symbols) {
+        to_delete.push_back(static_cast<symbol_c*>(ptr));
+    }
+
+    // Delete in reverse order to reduce the chances of order-dependent destructors.
+    for (auto it = to_delete.rbegin(); it != to_delete.rend(); ++it) {
+        symbol_c* node = *it;
+        if (is_heap_symbol(node) && !is_pinned_symbol(node)) {
+            delete node;
+        }
+    }
+}
+
 void ast_delete_impl(const std::vector<symbol_c*>& roots) noexcept {
-    if (roots.empty()) return;
+    if (roots.empty()) {
+        delete_tracked_symbols();
+        return;
+    }
 
     std::vector<symbol_c*> stack;
     stack.reserve(1024);
     for (auto* r : roots) {
         if (r) stack.push_back(r);
     }
-    if (stack.empty()) return;
+    if (stack.empty()) {
+        delete_tracked_symbols();
+        return;
+    }
 
     std::unordered_set<symbol_c*> visited;
     visited.reserve(4096);
@@ -136,7 +174,7 @@ void ast_delete_impl(const std::vector<symbol_c*>& roots) noexcept {
         }
 
         // Collect first; delete in a second pass so we never dereference freed nodes.
-        if (is_heap_symbol(node)) {
+        if (is_heap_symbol(node) && !is_pinned_symbol(node)) {
             to_delete.push_back(node);
         }
 
@@ -148,6 +186,10 @@ void ast_delete_impl(const std::vector<symbol_c*>& roots) noexcept {
     for (auto it = to_delete.rbegin(); it != to_delete.rend(); ++it) {
         delete *it;
     }
+
+    // Also delete any remaining heap-allocated symbols (e.g. nodes created during
+    // error recovery that are not reachable from the returned roots).
+    delete_tracked_symbols();
 }
 
 } // namespace
@@ -164,6 +206,7 @@ void* symbol_c::operator new(std::size_t size) {
 
 void symbol_c::operator delete(void* ptr) noexcept {
     if (ptr) {
+        pinned_symbols().erase(ptr);
         heap_symbols().erase(ptr);
     }
     ::operator delete(ptr);
@@ -212,6 +255,36 @@ void cstr_pool_clear() noexcept {
         std::free(s);
     }
     pool.clear();
+}
+
+void ast_pin(symbol_c* symbol) noexcept {
+    if (!symbol) return;
+
+    std::vector<symbol_c*> stack;
+    stack.reserve(256);
+    stack.push_back(symbol);
+
+    std::unordered_set<symbol_c*> visited;
+    visited.reserve(256);
+
+    child_pusher_visitor pusher(stack);
+
+    while (!stack.empty()) {
+        symbol_c* node = stack.back();
+        stack.pop_back();
+        if (!node) continue;
+
+        if (!visited.insert(node).second) {
+            continue;
+        }
+
+        if (is_heap_symbol(node)) {
+            pinned_symbols().insert(node);
+        }
+
+        push_annotation_edges(node, stack);
+        node->accept(pusher); // pushes syntax children
+    }
 }
 
 void ast_delete(symbol_c* root) noexcept {

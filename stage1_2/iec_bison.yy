@@ -8934,10 +8934,11 @@ int stage2__(const char *filename,
       goto cleanup;
     }
 
-    /* Free the temporary AST built during pre-parsing (we keep the filled
+    /* Free the temporary AST built during pre-parsing (we keep the filled      
      * library_element_symtable for the main parsing run). */
     matiec::ast_delete(tree_root);
     tree_root = NULL;
+    matiec::cstr_pool_clear();
   }
   /*******************************/
   /* Do the main parsing run...! */

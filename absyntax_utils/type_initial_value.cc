@@ -92,6 +92,22 @@ type_initial_value_c *type_initial_value_c::instance(void) {
   string_0     = new single_byte_character_string_c("''");
   wstring_0    = new double_byte_character_string_c("\"\"");
 
+  // These singleton AST nodes are reused across compilations. Pin them (and
+  // their syntax children) so compilation cleanup does not delete them.
+  matiec::ast_pin(null_literal);
+  matiec::ast_pin(real_0);
+  matiec::ast_pin(integer_0);
+  matiec::ast_pin(integer_1);
+  matiec::ast_pin(bool_0);
+  matiec::ast_pin(date_literal_0);
+  matiec::ast_pin(daytime_literal_0);
+  matiec::ast_pin(time_0);
+  matiec::ast_pin(date_0);
+  matiec::ast_pin(tod_0);
+  matiec::ast_pin(dt_0);
+  matiec::ast_pin(string_0);
+  matiec::ast_pin(wstring_0);
+
   return _instance;
 }
 

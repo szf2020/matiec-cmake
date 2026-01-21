@@ -374,7 +374,10 @@ namespace matiec {
   char* cstr_pool_take(char* s);
   void  cstr_pool_clear() noexcept;
 
-  /* Delete all heap-allocated AST nodes reachable from one or more roots. */
+  /* Mark a heap-allocated symbol as process-lifetime (excluded from ast_delete). */
+  void ast_pin(symbol_c* symbol) noexcept;
+
+  /* Delete all heap-allocated AST nodes reachable from one or more roots. */   
   void ast_delete(symbol_c* root) noexcept;
   void ast_delete(symbol_c* root1, symbol_c* root2) noexcept;
 } // namespace matiec
