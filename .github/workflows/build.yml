@@ -22,26 +22,37 @@ jobs:
             name: linux-x64
             cmake_generator: Ninja
             arch: x64
+            sanitizers: OFF
+          # Linux x64 (Sanitizers)
+          - os: ubuntu-latest
+            name: linux-x64-sanitizers
+            cmake_generator: Ninja
+            arch: x64
+            sanitizers: ON
           # Linux ARM64
           - os: ubuntu-24.04-arm
             name: linux-arm64
             cmake_generator: Ninja
             arch: arm64
+            sanitizers: OFF
           # macOS x64 (Intel) - use macos-15-intel instead of deprecated macos-13
           - os: macos-15
             name: macos-x64
             cmake_generator: Ninja
             arch: x64
+            sanitizers: OFF
           # macOS ARM64 (Apple Silicon)
           - os: macos-latest
             name: macos-arm64
             cmake_generator: Ninja
             arch: arm64
+            sanitizers: OFF
           # Windows x64
           - os: windows-latest
             name: windows-x64
             cmake_generator: Ninja
             arch: x64
+            sanitizers: OFF
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.name }})
@@ -75,10 +86,10 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            # Use Visual Studio generator on Windows for proper MSVC builds
+            # Use Visual Studio generator on Windows for proper MSVC builds     
             cmake -B build -G "Visual Studio 17 2022" -A x64 -DMATIEC_BUILD_TESTS=ON
           else
-            cmake -B build -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DMATIEC_BUILD_TESTS=ON
+            cmake -B build -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DMATIEC_BUILD_TESTS=ON -DMATIEC_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
           fi
 
       - name: Build
@@ -91,6 +102,7 @@ jobs:
           ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
 
       - name: Test executables
+        if: matrix.sanitizers != 'ON'
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
@@ -102,6 +114,7 @@ jobs:
           fi
 
       - name: Prepare distribution package
+        if: matrix.sanitizers != 'ON'
         shell: bash
         run: |
           DIST_DIR="matiec-${{ matrix.name }}"
@@ -143,6 +156,7 @@ jobs:
           fi
 
       - name: Upload artifacts
+        if: matrix.sanitizers != 'ON'
         uses: actions/upload-artifact@v4
         with:
           name: matiec-${{ matrix.name }}
