@@ -85,7 +85,7 @@
 #include "main.hh"
 #include "matiec/error.hpp"
 #include "matiec/format.hpp"
-#include "matiec/scope_exit.hpp"
+#include "matiec/internal/compilation_guard.hpp"
 
 
 #ifndef HGVERSION
@@ -235,19 +235,7 @@ int main(int argc, char **argv) {
   }
 
   // Ensure compilation resources are released even on early returns/exceptions.
-  auto cleanup = matiec::make_scope_exit([&]() noexcept {
-    // These global tables store raw pointers into the AST; clear them before
-    // freeing the compilation's AST.
-    absyntax_utils_reset();
-
-    // Free the AST (including any reordered wrapper produced by stage3) and
-    // then release lexer-owned strings used by tokens/filenames.
-    matiec::ast_delete(tree_root, ordered_tree_root);
-    matiec::cstr_pool_clear();
-
-    // Clear lexer/parser symbol tables and flags for the next run.
-    stage1_2_reset();
-  });
+  matiec::internal::compilation_cleanup_guard cleanup;
 
 
   /***************************/
@@ -255,8 +243,11 @@ int main(int argc, char **argv) {
   /***************************/
   try {
   /* 1st Pass */
-  if (stage1_2(argv[optind], &tree_root) < 0)
+  if (stage1_2(argv[optind], &tree_root) < 0) {
+    cleanup.tree_root_owner().reset(tree_root);
     return EXIT_FAILURE;
+  }
+  cleanup.tree_root_owner().reset(tree_root);
 
   /* 2nd Pass */
     /* basically loads some symbol tables to speed up look ups later on */      
@@ -266,9 +257,12 @@ int main(int argc, char **argv) {
   //add_en_eno_param_decl_c::add_to(tree_root);
 
   /* Do semantic verification of code */
-  if (stage3(tree_root, &ordered_tree_root) < 0)
+  if (stage3(tree_root, &ordered_tree_root) < 0) {
+    cleanup.tree_root_owner().get_deleter().ordered_root = ordered_tree_root;
     return EXIT_FAILURE;
-  
+  }
+  cleanup.tree_root_owner().get_deleter().ordered_root = ordered_tree_root;
+
   /* 3rd Pass */
   if (stage4(ordered_tree_root, builddir) < 0)
     return EXIT_FAILURE;
