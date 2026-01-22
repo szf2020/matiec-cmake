@@ -32,6 +32,7 @@
  */
 
 // #include <vector>
+#include <memory>
 #include "../absyntax_utils/absyntax_utils.hh"
 // #include "datatype_functions.hh"
 
@@ -40,7 +41,7 @@
 class array_range_check_c: public iterator_visitor_c {
 
   private:
-    search_varfb_instance_type_c *search_varfb_instance_type;
+    std::unique_ptr<search_varfb_instance_type_c> search_varfb_instance_type;
     int error_count;
     int current_display_error_level;
 
@@ -92,7 +93,6 @@ class array_range_check_c: public iterator_visitor_c {
     void *visit(program_declaration_c *symbol);
 
 }; /* array_range_check_c */
-
 
 
 

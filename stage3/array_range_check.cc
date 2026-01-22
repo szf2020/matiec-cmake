@@ -133,9 +133,9 @@ static inline int cmp_unsigned_signed(const uint64_t u, const int64_t s) {
 }
 
 array_range_check_c::array_range_check_c(symbol_c *ignore) {
-	error_count = 0;
-	current_display_error_level = 0;
-	search_varfb_instance_type = NULL;
+        error_count = 0;
+        current_display_error_level = 0;
+        search_varfb_instance_type = nullptr;
 }
 
 
@@ -346,31 +346,29 @@ void *array_range_check_c::visit(array_variable_c *symbol) {
 /***********************/
 // SYM_REF4(function_declaration_c, derived_function_name, type_name, var_declarations_list, function_body)
 void *array_range_check_c::visit(function_declaration_c *symbol) {
-	symbol->var_declarations_list->accept(*this); // required for visiting subrange_c
-	search_varfb_instance_type = new search_varfb_instance_type_c(symbol);
-	// search_var_instance_decl = new search_var_instance_decl_c(symbol);
-	symbol->function_body->accept(*this);
-	delete search_varfb_instance_type;
-	// delete search_var_instance_decl;
-	search_varfb_instance_type = NULL;
-	// search_var_instance_decl = NULL;
-	return NULL;
+        symbol->var_declarations_list->accept(*this); // required for visiting subrange_c
+        search_varfb_instance_type = std::make_unique<search_varfb_instance_type_c>(symbol);
+        // search_var_instance_decl = new search_var_instance_decl_c(symbol);   
+        symbol->function_body->accept(*this);
+        search_varfb_instance_type.reset();
+        // delete search_var_instance_decl;
+        // search_var_instance_decl = NULL;
+        return NULL;
 }
 
 /*****************************/
 /* B 1.5.2 - Function blocks */
 /*****************************/
 // SYM_REF3(function_block_declaration_c, fblock_name, var_declarations, fblock_body)
-void *array_range_check_c::visit(function_block_declaration_c *symbol) {
-	symbol->var_declarations->accept(*this); // required for visiting subrange_c
-	search_varfb_instance_type = new search_varfb_instance_type_c(symbol);
-	// search_var_instance_decl = new search_var_instance_decl_c(symbol);
-	symbol->fblock_body->accept(*this);
-	delete search_varfb_instance_type;
-	// delete search_var_instance_decl;
-	search_varfb_instance_type = NULL;
-	// search_var_instance_decl = NULL;
-	return NULL;
+void *array_range_check_c::visit(function_block_declaration_c *symbol) {        
+        symbol->var_declarations->accept(*this); // required for visiting subrange_c
+        search_varfb_instance_type = std::make_unique<search_varfb_instance_type_c>(symbol);
+        // search_var_instance_decl = new search_var_instance_decl_c(symbol);   
+        symbol->fblock_body->accept(*this);
+        search_varfb_instance_type.reset();
+        // delete search_var_instance_decl;
+        // search_var_instance_decl = NULL;
+        return NULL;
 }
 
 /**********************/
@@ -378,13 +376,12 @@ void *array_range_check_c::visit(function_block_declaration_c *symbol) {
 /**********************/
 // SYM_REF3(program_declaration_c, program_type_name, var_declarations, function_block_body)
 void *array_range_check_c::visit(program_declaration_c *symbol) {
-	symbol->var_declarations->accept(*this); // required for visiting subrange_c
-	search_varfb_instance_type = new search_varfb_instance_type_c(symbol);
-	// search_var_instance_decl = new search_var_instance_decl_c(symbol);
-	symbol->function_block_body->accept(*this);
-	delete search_varfb_instance_type;
-	// delete search_var_instance_decl;
-	search_varfb_instance_type = NULL;
-	// search_var_instance_decl = NULL;
-	return NULL;
+        symbol->var_declarations->accept(*this); // required for visiting subrange_c
+        search_varfb_instance_type = std::make_unique<search_varfb_instance_type_c>(symbol);
+        // search_var_instance_decl = new search_var_instance_decl_c(symbol);   
+        symbol->function_block_body->accept(*this);
+        search_varfb_instance_type.reset();
+        // delete search_var_instance_decl;
+        // search_var_instance_decl = NULL;
+        return NULL;
 }
