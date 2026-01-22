@@ -32,6 +32,7 @@
  */
 
 #include <vector>
+#include <memory>
 #include "../absyntax_utils/absyntax_utils.hh"
 #include "datatype_functions.hh"
 
@@ -48,8 +49,8 @@
 class lvalue_check_c: public iterator_visitor_c {
 
   private:
-    search_varfb_instance_type_c *search_varfb_instance_type;
-    search_var_instance_decl_c *search_var_instance_decl;
+    std::unique_ptr<search_varfb_instance_type_c> search_varfb_instance_type;
+    std::unique_ptr<search_var_instance_decl_c> search_var_instance_decl;
     int error_count;
     int current_display_error_level;
     std::vector <token_c *> control_variables;
@@ -133,7 +134,6 @@ class lvalue_check_c: public iterator_visitor_c {
     void *visit(for_statement_c *symbol);
 
 }; /* lvalue_check_c */
-
 
 
 

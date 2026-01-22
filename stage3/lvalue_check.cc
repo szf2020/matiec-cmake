@@ -118,8 +118,8 @@ lvalue_check_c::lvalue_check_c(symbol_c *ignore) {
         error_count = 0;
         current_display_error_level = 0;
         current_il_operand = NULL;
-	search_varfb_instance_type = NULL;
-	search_var_instance_decl = NULL;
+        search_varfb_instance_type = nullptr;
+        search_var_instance_decl = nullptr;
 }
 
 lvalue_check_c::~lvalue_check_c(void) {
@@ -424,42 +424,36 @@ void lvalue_check_c::check_formal_call(symbol_c *f_call, symbol_c *f_decl) {
 /* B 1.5.1 - Functions */
 /***********************/
 void *lvalue_check_c::visit(function_declaration_c *symbol) {
-	search_varfb_instance_type = new search_varfb_instance_type_c(symbol);
-	search_var_instance_decl = new search_var_instance_decl_c(symbol);
-	symbol->function_body->accept(*this);
-	delete search_varfb_instance_type;
-	delete search_var_instance_decl;
-	search_varfb_instance_type = NULL;
-	search_var_instance_decl = NULL;
-	return NULL;
+        search_varfb_instance_type = std::make_unique<search_varfb_instance_type_c>(symbol);
+        search_var_instance_decl = std::make_unique<search_var_instance_decl_c>(symbol);
+        symbol->function_body->accept(*this);
+        search_varfb_instance_type.reset();
+        search_var_instance_decl.reset();
+        return NULL;
 }
 
 /*****************************/
 /* B 1.5.2 - Function blocks */
 /*****************************/
 void *lvalue_check_c::visit(function_block_declaration_c *symbol) {
-	search_varfb_instance_type = new search_varfb_instance_type_c(symbol);
-	search_var_instance_decl = new search_var_instance_decl_c(symbol);
-	symbol->fblock_body->accept(*this);
-	delete search_varfb_instance_type;
-	delete search_var_instance_decl;
-	search_varfb_instance_type = NULL;
-	search_var_instance_decl = NULL;
-	return NULL;
+        search_varfb_instance_type = std::make_unique<search_varfb_instance_type_c>(symbol);
+        search_var_instance_decl = std::make_unique<search_var_instance_decl_c>(symbol);
+        symbol->fblock_body->accept(*this);
+        search_varfb_instance_type.reset();
+        search_var_instance_decl.reset();
+        return NULL;
 }
 
 /**********************/
 /* B 1.5.3 - Programs */
 /**********************/
 void *lvalue_check_c::visit(program_declaration_c *symbol) {
-	search_varfb_instance_type = new search_varfb_instance_type_c(symbol);
-	search_var_instance_decl = new search_var_instance_decl_c(symbol);
-	symbol->function_block_body->accept(*this);
-	delete search_varfb_instance_type;
-	delete search_var_instance_decl;
-	search_varfb_instance_type = NULL;
-	search_var_instance_decl = NULL;
-	return NULL;
+        search_varfb_instance_type = std::make_unique<search_varfb_instance_type_c>(symbol);
+        search_var_instance_decl = std::make_unique<search_var_instance_decl_c>(symbol);
+        symbol->function_block_body->accept(*this);
+        search_varfb_instance_type.reset();
+        search_var_instance_decl.reset();
+        return NULL;
 }
 
 /****************************************/
@@ -628,7 +622,6 @@ void *lvalue_check_c::visit(for_statement_c *symbol) {
 	control_variables.pop_back();
 	return NULL;
 }
-
 
 
 
