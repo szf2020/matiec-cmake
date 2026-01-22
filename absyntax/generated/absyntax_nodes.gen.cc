@@ -2114,6 +2114,7 @@ il_function_call_c::il_function_call_c(symbol_c *function_name,
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
                           :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_function_declaration = NULL;
   this->function_name = function_name;
   this->il_operand_list = il_operand_list;
   if  (NULL != function_name)   function_name->parent = this;
@@ -2155,6 +2156,7 @@ il_fb_call_c::il_fb_call_c(symbol_c *il_call_operator,
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
                           :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
   this->il_call_operator = il_call_operator;
   this->fb_name = fb_name;
   this->il_operand_list = il_operand_list;
@@ -2171,6 +2173,7 @@ il_formal_funct_call_c::il_formal_funct_call_c(symbol_c *function_name,
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
                           :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_function_declaration = NULL;
   this->function_name = function_name;
   this->il_param_list = il_param_list;
   if  (NULL != function_name)   function_name->parent = this;
@@ -2280,61 +2283,81 @@ void *NOT_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 S_operator_c::S_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *S_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 R_operator_c::R_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *R_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 S1_operator_c::S1_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *S1_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 R1_operator_c::R1_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *R1_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 CLK_operator_c::CLK_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *CLK_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 CU_operator_c::CU_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *CU_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 CD_operator_c::CD_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *CD_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 PV_operator_c::PV_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *PV_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 IN_operator_c::IN_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *IN_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 PT_operator_c::PT_operator_c(
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
-                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {}
+                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
+}
 void *PT_operator_c::accept(visitor_c &visitor) {return visitor.visit(this);}
 
 AND_operator_c::AND_operator_c(
@@ -2745,6 +2768,7 @@ function_invocation_c::function_invocation_c(symbol_c *function_name,
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
                           :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_function_declaration = NULL;
   this->function_name = function_name;
   this->formal_param_list = formal_param_list;
   this->nonformal_param_list = nonformal_param_list;
@@ -2789,6 +2813,7 @@ fb_invocation_c::fb_invocation_c(symbol_c *fb_name,
                            int fl, int fc, const char *ffile, long int forder,
                  int ll, int lc, const char *lfile, long int lorder)
                           :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {
+  this->called_fb_declaration = NULL;
   this->fb_name = fb_name;
   this->formal_param_list = formal_param_list;
   this->nonformal_param_list = nonformal_param_list;

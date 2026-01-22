@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,6 +13,21 @@ class SymEntry:
     class_name: str
     refs: tuple[str, ...]
     varargs: tuple[str, ...]
+
+
+_SYMBOL_PTR_DECL_RE = re.compile(r"\bsymbol_c\s*\*\s*([A-Za-z_]\w*)\s*;")
+
+
+def _symbol_ptr_members(varargs: tuple[str, ...]) -> tuple[str, ...]:
+    """Extract `symbol_c*` member names from the varargs tail.
+
+    C++ POD members (like raw pointers) are otherwise left uninitialized by the
+    generated constructors, which can lead to cross-platform UB.
+    """
+    if not varargs:
+        return ()
+    raw = ", ".join(varargs)
+    return tuple(_SYMBOL_PTR_DECL_RE.findall(raw))
 
 
 def _scan_matching_paren(text: str, open_paren_index: int) -> int:
@@ -494,7 +510,18 @@ def generate_nodes_source(entries: list[SymEntry]) -> str:
             if n == 0:
                 out.append(f"{e.class_name}::{e.class_name}(\n")
                 out.append(f"                           {LOCATION_DEF})\n")
-                out.append(f"                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {{}}\n")
+                ptr_inits = _symbol_ptr_members(e.varargs)
+                if ptr_inits:
+                    out.append(
+                        f"                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {{\n"
+                    )
+                    for name in ptr_inits:
+                        out.append(f"  this->{name} = NULL;\n")
+                    out.append("}\n")
+                else:
+                    out.append(
+                        f"                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {{}}\n"
+                    )
                 out.append(f"void *{e.class_name}::accept(visitor_c &visitor) {{return visitor.visit(this);}}\n\n")
                 continue
 
@@ -503,6 +530,9 @@ def generate_nodes_source(entries: list[SymEntry]) -> str:
             out.append(f"{e.class_name}::{e.class_name}({child_params},\n")
             out.append(f"                           {LOCATION_DEF})\n")
             out.append(f"                          :symbol_c(fl, fc, ffile, forder, ll, lc, lfile, lorder) {{\n")
+            ptr_inits = _symbol_ptr_members(e.varargs)
+            for name in ptr_inits:
+                out.append(f"  this->{name} = NULL;\n")
             for r in e.refs:
                 out.append(f"  this->{r} = {r};\n")
             for r in e.refs:
