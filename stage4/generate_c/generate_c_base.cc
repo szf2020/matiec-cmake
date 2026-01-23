@@ -24,6 +24,8 @@
 
 #include <string.h>
 
+#include "matiec/string_utils.hpp"
+
 
 
 /*  This file cotains two main classes:
@@ -289,7 +291,7 @@ class generate_c_base_c: public iterator_visitor_c {
         s4o.print("__BOOL_LITERAL(TRUE), "); // function has EN parameter, pass TRUE
       if (search_var.get_vartype(&eno_var) == search_var_instance_decl_c::output_vt)
         s4o.print("NULL, "); // function has ENO parameter, pass NULL
-      if (strcmp(function, "NE") != 0) // All comparison library functions are extensible, except for 'NE'!!
+      if (matiec::sv_or_empty(function) != "NE") // All comparison library functions are extensible, except for 'NE'!!
         s4o.print("2, "); // function is extensible, so must first pass the number of parameters that follow
       l_exp->accept(*this);
       s4o.print(", ");
@@ -1027,7 +1029,6 @@ void *visit(ref_type_decl_c *symbol) {
 
 
 }; /* class generate_c_base_and_typeid_c */
-
 
 
 
