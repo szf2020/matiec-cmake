@@ -24,6 +24,8 @@
 
 #include <memory>
 
+#include "matiec/string_utils.hpp"
+
 typedef struct
 {
   transition_c *symbol;
@@ -545,8 +547,9 @@ class generate_c_sfc_elements_c: public generate_c_base_and_typeid_c {
         case actionassociation_sg:
           {
             char *qualifier = (char *)symbol->action_qualifier->accept(*this);
+            const std::string_view qualifier_sv = matiec::sv_or_empty(qualifier);
             /* N qualifier */
-            if (strcmp(qualifier, "N") == 0) {
+            if (qualifier_sv == "N") {
               s4o.print(s4o.indent_spaces + "if (active)       ");
               print_set_var_or_action_state(current_action, "1");
               s4o.print(";\n");
@@ -556,59 +559,56 @@ class generate_c_sfc_elements_c: public generate_c_base_and_typeid_c {
               return NULL;
             }
             /* S qualifier */
-            if (strcmp(qualifier, "S") == 0) {
+            if (qualifier_sv == "S") {
               s4o.print(s4o.indent_spaces + "if (active)       {");
               print_action_argument(current_action, "set");
               s4o.print(" = 1;}\n");
               return NULL;
             }
             /* R qualifier */
-            if (strcmp(qualifier, "R") == 0) {
+            if (qualifier_sv == "R") {
               s4o.print(s4o.indent_spaces + "if (active)       {");
               print_action_argument(current_action, "reset");
               s4o.print(" = 1;}\n");
               return NULL;
             }
             /* L or D qualifiers */
-            if ((strcmp(qualifier, "L") == 0) || 
-                (strcmp(qualifier, "D") == 0)) {
-              s4o.print(s4o.indent_spaces + "if (active && __time_cmp(");
+            if ((qualifier_sv == "L") || (qualifier_sv == "D")) {
+              s4o.print(s4o.indent_spaces + "if (active && __time_cmp(");       
               print_step_argument(current_step, "T.value");
               s4o.print(", ");
               symbol->action_time->accept(*generate_c_st);
-              if (strcmp(qualifier, "L") == 0)
+              if (qualifier_sv == "L")
                 s4o.print(") < 0) ");
               else
                 s4o.print(") >= 0) ");
-              s4o.print("\n" + s4o.indent_spaces + "                  ");
+              s4o.print("\n" + s4o.indent_spaces + "                  ");       
               print_set_var_or_action_state(current_action, "1");
-              if (strcmp(qualifier, "L") == 0)
+              if (qualifier_sv == "L")
                 // in L, we force to zero while state is active and time has been reached
                 // or when the state is deactivated.
                 s4o.print("\n" + s4o.indent_spaces + "else if (desactivated || active)");
               else
-                s4o.print("\n" + s4o.indent_spaces + "else if (desactivated)");
+                s4o.print("\n" + s4o.indent_spaces + "else if (desactivated)"); 
               s4o.print("\n" + s4o.indent_spaces + "                  ");
               print_set_var_or_action_state(current_action, "0");
               s4o.print(";\n");
               return NULL;
             }
             /* P, P1 or P0 qualifiers */
-            if ( (strcmp(qualifier, "P" ) == 0) || 
-                 (strcmp(qualifier, "P1") == 0) ||
-                 (strcmp(qualifier, "P0") == 0)) {
-              if (strcmp(qualifier, "P0") == 0)
+            if ((qualifier_sv == "P") || (qualifier_sv == "P1") || (qualifier_sv == "P0")) {
+              if (qualifier_sv == "P0")
                 s4o.print(s4o.indent_spaces + "if (desactivated) ");
               else
                 s4o.print(s4o.indent_spaces + "if (activated)    ");
               print_set_var_or_action_state(current_action, "1");
-              s4o.print("\n" + s4o.indent_spaces + "else              ");
+              s4o.print("\n" + s4o.indent_spaces + "else              ");       
               print_set_var_or_action_state(current_action, "0");
               s4o.print(";\n");
               return NULL;
             }
             /* SL qualifier */
-            if (strcmp(qualifier, "SL") == 0) {
+            if (qualifier_sv == "SL") {
               s4o.print(s4o.indent_spaces + "if (activated) {");
               s4o.indent_right();
               s4o.print("\n" + s4o.indent_spaces);
@@ -623,18 +623,17 @@ class generate_c_sfc_elements_c: public generate_c_base_and_typeid_c {
               return NULL;
             }
             /* SD and DS qualifiers */
-            if ( (strcmp(qualifier, "SD") == 0) ||
-                 (strcmp(qualifier, "DS") == 0)) {
+            if ((qualifier_sv == "SD") || (qualifier_sv == "DS")) {
               s4o.print(s4o.indent_spaces + "if (activated) {");
               s4o.indent_right();
               s4o.print("\n" + s4o.indent_spaces);
-              print_action_argument(current_action, "set_remaining_time");
+              print_action_argument(current_action, "set_remaining_time");      
               s4o.print(" = ");
               symbol->action_time->accept(*generate_c_st);
               s4o.print(";\n");
               s4o.indent_left();
               s4o.print(s4o.indent_spaces + "}\n");
-              if (strcmp(qualifier, "DS") == 0) {
+              if (qualifier_sv == "DS") {
                 s4o.print(s4o.indent_spaces + "if (desactivated) {");
                 s4o.indent_right();
                 s4o.print("\n" + s4o.indent_spaces);
