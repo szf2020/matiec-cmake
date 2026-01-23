@@ -18,6 +18,15 @@ TEST(StringUtilsTest, SvOrEmptyHandlesNull) {
     EXPECT_EQ(non_empty, "abc");
 }
 
+TEST(StringUtilsTest, LinkerAnchorsRuntimeOptionsForStaticArchives) {
+    // libabsyntax references error_exit() (legacy ERROR macros). On ELF linkers,
+    // the object that defines error_exit/runtime_options may not be pulled from
+    // libmatiec.a unless something references it directly. This test provides
+    // that reference without changing production behavior.
+    volatile const runtime_options_t* anchor = &runtime_options;
+    ASSERT_NE(anchor, nullptr);
+}
+
 TEST(StringUtilsTest, IEqualsIsCaseInsensitive) {
     EXPECT_TRUE(matiec::iequals("abc", "ABC"));
     EXPECT_TRUE(matiec::iequals("AbC", "aBc"));
@@ -44,4 +53,3 @@ TEST(AbsyntaxListCTest, FindElementIsCaseInsensitive) {
     EXPECT_EQ(list.find_element("BAR"), &bar);
     EXPECT_EQ(list.find_element("baz"), nullptr);
 }
-
