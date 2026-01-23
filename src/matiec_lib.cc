@@ -23,7 +23,11 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-// Avoid the Windows GDI ERROR macro clashing with matiec's legacy ERROR macro
+#include <fcntl.h>
+#include <io.h>
+#include <sys/stat.h>
+#include <errno.h>
+// Avoid the Windows GDI ERROR macro clashing with matiec's legacy ERROR macro  
 // from main.hh (pulled in transitively by absyntax headers).
 #ifdef ERROR
 #undef ERROR
@@ -49,8 +53,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
 #include <filesystem>
 #include <memory>
+#include <random>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -522,34 +528,54 @@ MATIEC_API matiec_error_t matiec_compile_string(
     std::string temp_file_path;
 
 #ifdef _WIN32
-    std::vector<char> temp_path_buf(MAX_PATH);
-    DWORD temp_path_len = GetTempPathA(static_cast<DWORD>(temp_path_buf.size()),
-                                       temp_path_buf.data());
-    if (temp_path_len == 0) {
-        result_set_error(result, MATIEC_ERROR_IO, "Failed to get temporary directory");
-        return MATIEC_ERROR_IO;
-    }
-    if (temp_path_len >= temp_path_buf.size()) {
-        temp_path_buf.resize(static_cast<size_t>(temp_path_len) + 1);
-        temp_path_len = GetTempPathA(static_cast<DWORD>(temp_path_buf.size()),
-                                     temp_path_buf.data());
-        if (temp_path_len == 0 || temp_path_len >= temp_path_buf.size()) {
-            result_set_error(result, MATIEC_ERROR_IO, "Failed to get temporary directory");
-            return MATIEC_ERROR_IO;
-        }
+    std::error_code ec;
+    std::filesystem::path temp_dir = std::filesystem::temp_directory_path(ec);
+    if (ec) {
+        temp_dir = std::filesystem::current_path();
     }
 
-    // GetTempFileNameA() requires a buffer of at least MAX_PATH characters.
-    std::vector<char> temp_file_buf(MAX_PATH);
-    if (GetTempFileNameA(temp_path_buf.data(), "iec", 0, temp_file_buf.data()) == 0) {
-        result_set_error(result, MATIEC_ERROR_IO, "Failed to create temporary file name");
+    // Use "random name + exclusive create" to avoid MAX_PATH-sized buffers and
+    // keep behavior consistent with mkstemps() on POSIX.
+    const auto now = std::chrono::system_clock::now();
+    const auto epoch = now.time_since_epoch();
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(epoch).count();
+
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<unsigned long long> dis(0ULL, 0xFFFFFFFFFFFFULL);
+
+    for (int attempt = 0; attempt < 64 && temp_file_path.empty(); ++attempt) {
+        const unsigned long long r = dis(gen);
+        const std::string name =
+            "matiec_" + std::to_string(ms) + "_" + std::to_string(r) + ".st";
+        const std::filesystem::path candidate = temp_dir / name;
+        const std::string candidate_str = candidate.string();
+
+        const int fd = _open(candidate_str.c_str(),
+                             _O_CREAT | _O_EXCL | _O_WRONLY | _O_BINARY,
+                             _S_IREAD | _S_IWRITE);
+        if (fd >= 0) {
+            _close(fd);
+            temp_file_path = candidate_str;
+            break;
+        }
+
+        if (errno == EEXIST) {
+            continue;
+        }
+
+        result_set_error(result, MATIEC_ERROR_IO, "Failed to create temporary file");
         return MATIEC_ERROR_IO;
     }
-    temp_file_path = temp_file_buf.data();
+
+    if (temp_file_path.empty()) {
+        result_set_error(result, MATIEC_ERROR_IO, "Failed to create temporary file");
+        return MATIEC_ERROR_IO;
+    }
 #else
     constexpr int kSuffixLen = 3; // ".st"
     std::error_code ec;
-    std::filesystem::path temp_dir = std::filesystem::temp_directory_path(ec);
+    std::filesystem::path temp_dir = std::filesystem::temp_directory_path(ec);  
     if (ec) {
         temp_dir = "/tmp";
     }
