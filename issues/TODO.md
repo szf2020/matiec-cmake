@@ -2,11 +2,11 @@
 说明：本仓库使用 Issue CSV 作为每个 plan 的“执行契约”，字段含义与格式要求见 `issues/README.md`。本清单用于快速导航；以 CSV 中的状态为准。
 
 ## 进行中
-- P3 回归收尾：`issues/p3-string-upgrade-pass1.csv` 的 `S5`（等待 CI linux-x64-sanitizers/LSan 门禁通过）
+- 当前无进行中的 Issue CSV
 
 ## 下一步（按优先级）
-1) 等 CI 通过后，把 `issues/p3-string-upgrade-pass1.csv` 的 `S5`：`Review1_Status`/`Regression_Status` 置为 `DONE`，并在 `Notes` 记录 run 链接/编号
-2) 如需继续推进 P3 后续（Pass2+）：先做“小范围替换清单 + 回归门禁”，避免直接动 Bison `%union`（高风险）
+1) 如需继续推进 P3 后续（Pass2+）：先做“小范围替换清单 + 回归门禁”，避免直接动 Bison `%union`（高风险）
+2) 如需继续推进 P2（AST 所有权）：先做小范围试点并补强回归门禁（ASan/LSan/CI），再考虑扩展到 Bison 动作与 SYM_REF* 宏
 
 ## 已完成（DONE）
 - `issues/p-modern-cpp-style-overview.csv`：M1-M8
@@ -15,4 +15,4 @@
 - `issues/p2-stage4-raii-pass1.csv`：A1-A4
 - `issues/p2-raii-sweep-pass2.csv`：D1-D4
 - `issues/p2-ast-ownership-pilot-pass1.csv`：E1-E4
-- `issues/p3-string-upgrade-pass1.csv`：S1-S4（待回归 S5）
+- `issues/p3-string-upgrade-pass1.csv`：S1-S5
