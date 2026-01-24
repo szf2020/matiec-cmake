@@ -126,6 +126,27 @@ gtest_discover_tests(test_compilation_unit
         LABELS "unit"
 )
 
+# Modern AST scaffolding tests
+add_executable(test_ast_modern
+    unit/test_ast_modern.cc
+)
+target_include_directories(test_ast_modern PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}
+)
+target_link_libraries(test_ast_modern PRIVATE
+    matiec_test_utils
+    matiec_static
+    GTest::gtest_main
+)
+gtest_discover_tests(test_ast_modern
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    PROPERTIES
+        LABELS "unit"
+)
+
 # ==============================================================================
 # End-to-End Tests
 # ==============================================================================
@@ -192,6 +213,7 @@ add_custom_target(test_unit
     COMMAND ${CMAKE_CTEST_COMMAND} -L unit --output-on-failure
     DEPENDS test_matiec_api test_error_handling test_string_utils
             test_visitor_result test_compilation_unit
+            test_ast_modern
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running unit tests..."
 )

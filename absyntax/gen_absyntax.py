@@ -641,10 +641,159 @@ def generate_child_pusher_methods(entries: list[SymEntry]) -> str:
     return "".join(out)
 
 
+def generate_modern_forward_header(entries: list[SymEntry]) -> str:
+    out: list[str] = []
+    out.append("// Generated file. Do not edit manually.\n")
+    out.append("// Source: absyntax/absyntax.def (SYM_LIST/SYM_TOKEN/SYM_REF* entries)\n\n")
+    out.append("#pragma once\n\n")
+    out.append("namespace matiec::ast {\n\n")
+    for e in entries:
+        out.append(f"class {e.class_name};\n")
+    out.append("\n} // namespace matiec::ast\n")
+    return "".join(out)
+
+
+def _modern_optional_ref(kind: str, index: int) -> bool:
+    if not kind.startswith("REF"):
+        return False
+    n = int(kind.removeprefix("REF"))
+    return n in (2, 4, 6) and index == n
+
+
+def generate_modern_nodes_header(entries: list[SymEntry]) -> str:
+    out: list[str] = []
+    out.append("// Generated file. Do not edit manually.\n")
+    out.append("// Source: absyntax/absyntax.def (SYM_LIST/SYM_TOKEN/SYM_REF* entries)\n\n")
+    out.append("#pragma once\n\n")
+    out.append('#include "matiec/ast/visitor.hpp"\n\n')
+    out.append("namespace matiec::ast {\n\n")
+
+    for e in entries:
+        name = e.class_name
+        if e.kind == "LIST":
+            out.append(f"class {name} final : public List {{\n")
+            out.append("public:\n")
+            out.append(f"    {name}() = default;\n")
+            out.append(f"    explicit {name}(SourceRange range) : List(std::move(range)) {{}}\n")
+            out.append("    [[nodiscard]] VisitorResult accept(Visitor& visitor) override {\n")
+            out.append("        return visitor.visit(*this);\n")
+            out.append("    }\n")
+            out.append(
+                f"    [[nodiscard]] std::string_view typeName() const noexcept override {{ return \"{name}\"; }}\n"
+            )
+            out.append("};\n\n")
+            continue
+
+        if e.kind == "TOKEN":
+            out.append(f"class {name} final : public Token {{\n")
+            out.append("public:\n")
+            out.append(f"    {name}() = default;\n")
+            out.append(
+                f"    explicit {name}(std::string value, SourceRange range = {{}})\n"
+                f"        : Token(std::move(value), std::move(range)) {{}}\n"
+            )
+            out.append("    [[nodiscard]] VisitorResult accept(Visitor& visitor) override {\n")
+            out.append("        return visitor.visit(*this);\n")
+            out.append("    }\n")
+            out.append(
+                f"    [[nodiscard]] std::string_view typeName() const noexcept override {{ return \"{name}\"; }}\n"
+            )
+            out.append("};\n\n")
+            continue
+
+        if e.kind.startswith("REF"):
+            out.append(f"class {name} final : public Symbol {{\n")
+            out.append("public:\n")
+            out.append(f"    {name}() = default;\n")
+            if e.refs:
+                params: list[str] = []
+                inits: list[str] = []
+                for idx, r in enumerate(e.refs, start=1):
+                    default = " = nullptr" if _modern_optional_ref(e.kind, idx) else ""
+                    params.append(f"std::unique_ptr<Symbol> {r}{default}")
+                    inits.append(f"{r}_(std::move({r}))")
+                params.append("SourceRange range = {}")
+                init_list = ", ".join(inits)
+                out.append(f"    {name}(")
+                out.append(",\n        ".join(params))
+                out.append(")\n")
+                out.append(f"        : Symbol(std::move(range)), {init_list} {{\n")
+                for r in e.refs:
+                    out.append(f"        if ({r}_) {{\n")
+                    out.append(f"            {r}_->setParent(this);\n")
+                    out.append("        }\n")
+                out.append("    }\n")
+            else:
+                out.append(f"    explicit {name}(SourceRange range) : Symbol(std::move(range)) {{}}\n")
+
+            out.append("    [[nodiscard]] VisitorResult accept(Visitor& visitor) override {\n")
+            out.append("        return visitor.visit(*this);\n")
+            out.append("    }\n")
+            out.append(
+                f"    [[nodiscard]] std::string_view typeName() const noexcept override {{ return \"{name}\"; }}\n"
+            )
+
+            for r in e.refs:
+                out.append(f"    [[nodiscard]] Symbol* {r}() const noexcept {{ return {r}_.get(); }}\n")
+                out.append(f"    void set_{r}(std::unique_ptr<Symbol> value) {{\n")
+                out.append(f"        {r}_ = std::move(value);\n")
+                out.append(f"        if ({r}_) {{\n")
+                out.append(f"            {r}_->setParent(this);\n")
+                out.append("        }\n")
+                out.append("    }\n")
+
+            out.append("private:\n")
+            for r in e.refs:
+                out.append(f"    std::unique_ptr<Symbol> {r}_;\n")
+            out.append("};\n\n")
+            continue
+
+        raise AssertionError(f"unhandled entry kind: {e.kind}")
+
+    out.append("} // namespace matiec::ast\n")
+    return "".join(out)
+
+
+def generate_modern_visitor_methods(entries: list[SymEntry]) -> str:
+    out: list[str] = []
+    out.append("// Generated fragment. Do not edit manually.\n")
+    out.append("// Source: absyntax/absyntax.def (SYM_LIST/SYM_TOKEN/SYM_REF* entries)\n\n")
+    for e in entries:
+        out.append(
+            f"    [[nodiscard]] virtual VisitorResult visit({e.class_name}& /*symbol*/) {{ return {{}}; }}\n"
+        )
+    return "".join(out)
+
+
+def generate_legacy_visitor_methods(entries: list[SymEntry]) -> str:
+    out: list[str] = []
+    out.append("// Generated fragment. Do not edit manually.\n")
+    out.append("// Source: absyntax/absyntax.def (SYM_LIST/SYM_TOKEN/SYM_REF* entries)\n\n")
+    for e in entries:
+        out.append(
+            f"    virtual void* visit({e.class_name}* symbol) {{ return visit(static_cast<symbol_c*>(symbol)); }}\n"
+        )
+    return "".join(out)
+
+
+def generate_legacy_adapter_methods(entries: list[SymEntry]) -> str:
+    out: list[str] = []
+    out.append("// Generated fragment. Do not edit manually.\n")
+    out.append("// Source: absyntax/absyntax.def (SYM_LIST/SYM_TOKEN/SYM_REF* entries)\n\n")
+    for e in entries:
+        out.append(
+            f"    [[nodiscard]] VisitorResult visit({e.class_name}& symbol) override {{\n"
+            f"        return from_legacy(legacy_.visit(&symbol));\n"
+            f"    }}\n"
+        )
+    return "".join(out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate AST/visitor code from absyntax.def")
     ap.add_argument("--input", type=Path, default=Path(__file__).with_name("absyntax.def"))
     ap.add_argument("--out-dir", type=Path, default=Path(__file__).with_name("generated"))
+    ap.add_argument("--modern-out-dir", type=Path, default=None)
     args = ap.parse_args()
 
     text = args.input.read_text(encoding="utf-8", errors="strict")
@@ -667,6 +816,25 @@ def main() -> int:
     (out_dir / "ast_child_pusher_visitor_methods.gen.inc").write_text(
         generate_child_pusher_methods(entries), encoding="utf-8", newline="\n"
     )
+
+    if args.modern_out_dir:
+        modern_dir: Path = args.modern_out_dir
+        modern_dir.mkdir(parents=True, exist_ok=True)
+        (modern_dir / "ast_nodes_fwd.gen.hpp").write_text(
+            generate_modern_forward_header(entries), encoding="utf-8", newline="\n"
+        )
+        (modern_dir / "ast_nodes.gen.hpp").write_text(
+            generate_modern_nodes_header(entries), encoding="utf-8", newline="\n"
+        )
+        (modern_dir / "visitor_methods_decl.gen.hpp").write_text(
+            generate_modern_visitor_methods(entries), encoding="utf-8", newline="\n"
+        )
+        (modern_dir / "legacy_visitor_methods.gen.hpp").write_text(
+            generate_legacy_visitor_methods(entries), encoding="utf-8", newline="\n"
+        )
+        (modern_dir / "legacy_adapter_methods.gen.hpp").write_text(
+            generate_legacy_adapter_methods(entries), encoding="utf-8", newline="\n"
+        )
 
     return 0
 
