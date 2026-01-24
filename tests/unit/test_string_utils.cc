@@ -54,3 +54,17 @@ TEST(AbsyntaxListCTest, FindElementIsCaseInsensitive) {
     EXPECT_EQ(list.find_element("BAR"), &bar);
     EXPECT_EQ(list.find_element("baz"), nullptr);
 }
+
+TEST(AbsyntaxSymbolCTest, FileNamesSurviveCstrPoolClear) {
+    const char* first = matiec::cstr_pool_strdup("first.st");
+    const char* last = matiec::cstr_pool_strdup("last.st");
+
+    token_c token("T", 1, 1, first, 0, 1, 2, last, 0);
+
+    matiec::cstr_pool_clear();
+
+    ASSERT_NE(token.first_file, nullptr);
+    ASSERT_NE(token.last_file, nullptr);
+    EXPECT_STREQ(token.first_file, "first.st");
+    EXPECT_STREQ(token.last_file, "last.st");
+}

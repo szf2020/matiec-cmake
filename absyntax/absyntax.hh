@@ -160,6 +160,43 @@ class const_value_c {
       {return (m_int64.is_valid() || m_uint64.is_valid() || m_real64.is_valid() || m_bool.is_valid());}   
 };
 
+namespace matiec {
+/* Owns (or represents absence of) a token string while keeping existing
+ * `token->value` call sites working (they expect a C string). */
+class token_string final {
+public:
+  token_string() noexcept = default;
+  token_string(const char* s) { assign(s); }
+
+  token_string& operator=(const char* s) {
+    assign(s);
+    return *this;
+  }
+
+  const char* c_str() const noexcept { return is_null_ ? nullptr : storage_.c_str(); }
+  std::string_view view() const noexcept {
+    return is_null_ ? std::string_view() : std::string_view(storage_);
+  }
+  operator const char*() const noexcept { return c_str(); }
+
+  bool is_null() const noexcept { return is_null_; }
+
+private:
+  void assign(const char* s) {
+    if (!s) {
+      storage_.clear();
+      is_null_ = true;
+      return;
+    }
+    storage_ = s;
+    is_null_ = false;
+  }
+
+  std::string storage_;
+  bool is_null_ = true;
+};
+} // namespace matiec
+
 // A forward declaration
 class token_c;
 
@@ -197,6 +234,22 @@ class symbol_c {
     const char *last_file;  /* filename referenced by last line/column */
     long int last_order;    /* relative order in which it is read by lexcial analyser */
 
+  protected:
+    void set_first_file(const char* ffile) {
+      first_file_storage_ = ffile;
+      first_file = first_file_storage_.c_str();
+    }
+
+    void set_last_file(const char* lfile) {
+      last_file_storage_ = lfile;
+      last_file = last_file_storage_.c_str();
+    }
+
+  private:
+    matiec::token_string first_file_storage_;
+    matiec::token_string last_file_storage_;
+
+  public:
 
     /*
      * Annotations produced during stage 3
@@ -255,43 +308,6 @@ class symbol_c {
     static void operator delete(void* ptr) noexcept;
 };
 
-
-
-
-namespace matiec {
-/* Owns (or represents absence of) a token string while keeping existing
- * `token->value` call sites working (they expect a C string). */
-class token_string final {
-public:
-  token_string() noexcept = default;
-  token_string(const char* s) { assign(s); }
-
-  token_string& operator=(const char* s) {
-    assign(s);
-    return *this;
-  }
-
-  const char* c_str() const noexcept { return is_null_ ? nullptr : storage_.c_str(); }
-  operator const char*() const noexcept { return c_str(); }
-
-  bool is_null() const noexcept { return is_null_; }
-
-private:
-  void assign(const char* s) {
-    if (!s) {
-      storage_.clear();
-      is_null_ = true;
-      return;
-    }
-    storage_ = s;
-    is_null_ = false;
-  }
-
-  std::string storage_;
-  bool is_null_ = true;
-};
-} // namespace matiec
-
 class token_c: public symbol_c {
   public:
     /* WARNING: only use this method for debugging purposes!! */
@@ -320,7 +336,7 @@ class list_c: public symbol_c {
   private:
 //     symbol_c **elements;
     typedef struct {
-      const char *token_value;
+      matiec::token_string token_value;
       symbol_c   *symbol;
     } element_entry_t;
     std::vector<element_entry_t> elements;

@@ -50,11 +50,11 @@
 symbol_c::symbol_c(
                    int first_line, int first_column, const char *ffile, long int first_order,
                    int last_line,  int last_column,  const char *lfile, long int last_order ) {
-  this->first_file   = ffile,
+  set_first_file(ffile);
   this->first_line   = first_line;
   this->first_column = first_column;
   this->first_order  = first_order;
-  this->last_file    = lfile,
+  set_last_file(lfile);
   this->last_line    = last_line;
   this->last_column  = last_column;
   this->last_order   = last_order;
@@ -122,12 +122,13 @@ symbol_c *list_c::get_element(int pos) {return elements[pos].symbol;}
 symbol_c *list_c::find_element(symbol_c *token) {
   token_c *t = dynamic_cast<token_c *>(token);
   if (t == NULL) ERROR;
-  return find_element((const char *)t->value);  
+  return find_element(t->value.c_str());
 }
 
 symbol_c *list_c::find_element(const char *token_value) {
+  const std::string_view token_view = matiec::sv_or_empty(token_value);
   for (int i = 0; i < n; i++)
-    if (matiec::iequals(elements[i].token_value, token_value))
+    if (matiec::iequals(elements[i].token_value.view(), token_view))
       return elements[i].symbol;
 
   return NULL; // not found
@@ -172,7 +173,7 @@ void list_c::add_element(symbol_c *elem, const char *token_value) {
 
   /* adjust the location parameters, taking into account the new element. */
   if (NULL == first_file) {
-    first_file = elem->first_file;
+    set_first_file(elem->first_file);
     first_line = elem->first_line;
     first_column = elem->first_column;
   }
@@ -184,7 +185,7 @@ void list_c::add_element(symbol_c *elem, const char *token_value) {
     first_column = elem->first_column;
   }
   if (NULL == last_file) {
-    last_file = elem->last_file;
+    set_last_file(elem->last_file);
     last_line = elem->last_line;
     last_column = elem->last_column;
   }
