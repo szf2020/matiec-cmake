@@ -12,6 +12,11 @@
 3. Automated verification whenever possible.
 4. Small, reviewable commits and recoverable state.
 
+## Commit policy
+- 使用 Angular commit-log 格式：`type(scope): subject`。
+- 按功能粒度拆分提交，避免把无关变更混在同一提交中。
+- Issue CSV/TODO 的更新与对应功能改动放在同一提交内。
+
 ## E2E loop
 E2E loop = plan → issues → implement → test → review → commit → regression.
 
