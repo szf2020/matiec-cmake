@@ -7,14 +7,14 @@ This directory contains documentation for the matiec project.
 | File | Description |
 |------|-------------|
 | [INTEGRATION.md](INTEGRATION.md) | Guide for integrating matiec into external projects (CPM, vcpkg, FetchContent) |
-| [legacy/ARCHITECTURE.txt](legacy/ARCHITECTURE.txt) | Original detailed architecture documentation (compiler internals) |
-| [legacy/BUILD_AUTOTOOLS.txt](legacy/BUILD_AUTOTOOLS.txt) | Legacy Autotools build instructions (deprecated) |
+| [architecture/ARCHITECTURE.txt](architecture/ARCHITECTURE.txt) | Detailed architecture documentation (compiler internals) |
+| [architecture/CMAKE_MIGRATION_PLAN.md](architecture/CMAKE_MIGRATION_PLAN.md) | Historical CMake migration plan |
 
 ## Quick Links
 
 - **Main README**: [../README.md](../README.md)
 - **License**: [../COPYING](../COPYING)
-- **Standard Library**: [../lib/](../lib/)
+- **Standard Library**: [../src/lib/](../src/lib/)
 
 ## Building
 
@@ -29,4 +29,4 @@ The matiec compiler works in 4 stages:
 3. **Stage 3 (Semantics)**: Type checking and flow control analysis
 4. **Stage 4 (Code Gen)**: Generates C code (iec2c) or normalized IEC code (iec2iec)
 
-For detailed architecture documentation, see [legacy/ARCHITECTURE.txt](legacy/ARCHITECTURE.txt).
+For detailed architecture documentation, see [architecture/ARCHITECTURE.txt](architecture/ARCHITECTURE.txt).

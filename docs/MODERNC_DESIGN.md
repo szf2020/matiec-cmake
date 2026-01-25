@@ -46,7 +46,7 @@ matiec 是一个成熟的 IEC 61131-3 编译器，最初基于 2003-2011 年的 
 | stage3 (语义分析) | 旧式 C++ | Modern C++17 |
 | stage4 (代码生成) | 旧式 C++ | Modern C++17 |
 | util (工具库) | 部分现代化 | 完全 C++17 |
-| include/matiec | 已现代化 | 保持/增强 |
+| src/include/matiec | 已现代化 | 保持/增强 |
 
 ---
 
@@ -84,10 +84,10 @@ matiec 是一个成熟的 IEC 61131-3 编译器，最初基于 2003-2011 年的 
 
 | 文件/模块 | 现代特性 |
 |-----------|---------|
-| `include/matiec/error.hpp` | `std::optional`, `std::unique_ptr`, `[[nodiscard]]`, `constexpr` |
-| `include/matiec/string_utils.hpp` | `std::string_view`, `[[nodiscard]]`, `noexcept` |
-| `util/symtable.hh` | `std::unique_ptr`, `std::string_view`, 移动语义 |
-| `absyntax/absyntax.hh` | `std::string_view`, `token_string` 封装 |
+| `src/include/matiec/error.hpp` | `std::optional`, `std::unique_ptr`, `[[nodiscard]]`, `constexpr` |
+| `src/include/matiec/string_utils.hpp` | `std::string_view`, `[[nodiscard]]`, `noexcept` |
+| `src/util/symtable.hh` | `std::unique_ptr`, `std::string_view`, 移动语义 |
+| `src/absyntax/absyntax.hh` | `std::string_view`, `token_string` 封装 |
 | `src/matiec_lib.cc` | RAII, 现代错误处理 |
 
 #### 2.2.2 需要现代化的部分 (✗)
@@ -219,7 +219,7 @@ class code_generator : public visitor_c { /* 返回 string? void? */ };
 #### 4.2.1 引入 VisitorResult 变体类型
 
 ```cpp
-// include/matiec/ast/visitor_result.hpp
+// src/include/matiec/ast/visitor_result.hpp
 
 #ifndef MATIEC_AST_VISITOR_RESULT_HPP
 #define MATIEC_AST_VISITOR_RESULT_HPP
@@ -287,7 +287,7 @@ template<typename T>
 #### 4.2.2 现代化的 Visitor 基类
 
 ```cpp
-// include/matiec/ast/visitor.hpp
+// src/include/matiec/ast/visitor.hpp
 
 #ifndef MATIEC_AST_VISITOR_HPP
 #define MATIEC_AST_VISITOR_HPP
@@ -382,7 +382,7 @@ public:
 #### 4.3.1 基类 Symbol 重构
 
 ```cpp
-// include/matiec/ast/symbol.hpp
+// src/include/matiec/ast/symbol.hpp
 
 #ifndef MATIEC_AST_SYMBOL_HPP
 #define MATIEC_AST_SYMBOL_HPP
@@ -607,7 +607,7 @@ private:
 #### 4.3.2 具体节点类型示例
 
 ```cpp
-// include/matiec/ast/declarations.hpp
+// src/include/matiec/ast/declarations.hpp
 
 #ifndef MATIEC_AST_DECLARATIONS_HPP
 #define MATIEC_AST_DECLARATIONS_HPP
@@ -833,7 +833,7 @@ void cstr_pool_clear();
 ### 5.3 编译单元封装
 
 ```cpp
-// include/matiec/compiler/compilation_unit.hpp
+// src/include/matiec/compiler/compilation_unit.hpp
 
 #ifndef MATIEC_COMPILER_COMPILATION_UNIT_HPP
 #define MATIEC_COMPILER_COMPILATION_UNIT_HPP
@@ -920,7 +920,7 @@ private:
 ### 5.4 字符串池现代化
 
 ```cpp
-// include/matiec/util/string_pool.hpp
+// src/include/matiec/util/string_pool.hpp
 
 #ifndef MATIEC_UTIL_STRING_POOL_HPP
 #define MATIEC_UTIL_STRING_POOL_HPP
@@ -1007,7 +1007,7 @@ bool is_integer_type = get_datatype_info_c::is_ANY_INT(datatype);
 ### 6.2 独立的类型系统
 
 ```cpp
-// include/matiec/types/type.hpp
+// src/include/matiec/types/type.hpp
 
 #ifndef MATIEC_TYPES_TYPE_HPP
 #define MATIEC_TYPES_TYPE_HPP
@@ -1247,7 +1247,7 @@ private:
 ### 6.3 类型推断器
 
 ```cpp
-// include/matiec/types/type_inferrer.hpp
+// src/include/matiec/types/type_inferrer.hpp
 
 #ifndef MATIEC_TYPES_TYPE_INFERRER_HPP
 #define MATIEC_TYPES_TYPE_INFERRER_HPP
@@ -1304,7 +1304,7 @@ error.hpp 已经提供了良好的现代错误处理基础设施。需要将其�
 ### 7.2 集成策略
 
 ```cpp
-// include/matiec/diagnostics/diagnostic.hpp
+// src/include/matiec/diagnostics/diagnostic.hpp
 
 #ifndef MATIEC_DIAGNOSTICS_DIAGNOSTIC_HPP
 #define MATIEC_DIAGNOSTICS_DIAGNOSTIC_HPP
@@ -1427,7 +1427,7 @@ s4o.print("(");
 ### 8.2 现代代码生成器
 
 ```cpp
-// include/matiec/codegen/code_emitter.hpp
+// src/include/matiec/codegen/code_emitter.hpp
 
 #ifndef MATIEC_CODEGEN_CODE_EMITTER_HPP
 #define MATIEC_CODEGEN_CODE_EMITTER_HPP
@@ -1623,7 +1623,7 @@ ast::VisitorResult CCodeGenerator::visit(ast::FunctionBlockDeclaration& symbol) 
 ### 9.1 现代化符号表
 
 ```cpp
-// include/matiec/semantic/symbol_table.hpp
+// src/include/matiec/semantic/symbol_table.hpp
 
 #ifndef MATIEC_SEMANTIC_SYMBOL_TABLE_HPP
 #define MATIEC_SEMANTIC_SYMBOL_TABLE_HPP
@@ -1796,7 +1796,7 @@ private:
 ### 10.1 C++ 公共 API
 
 ```cpp
-// include/matiec/matiec.hpp
+// src/include/matiec/matiec.hpp
 
 #ifndef MATIEC_HPP
 #define MATIEC_HPP
@@ -1930,7 +1930,7 @@ private:
 
 ### 10.2 保留 C API 兼容性
 
-现有的 `include/matiec/matiec.h` C API 保持不变，内部实现使用新的 C++ API。
+现有的 `src/include/matiec/matiec.h` C API 保持不变，内部实现使用新的 C++ API。
 
 ---
 
@@ -2007,7 +2007,7 @@ private:
 
 ```
 matiec-cmake/
-├── include/matiec/
+├── src/include/matiec/
 │   ├── matiec.h              # C API (保持不变)
 │   ├── matiec.hpp            # Modern C++ API (新增)
 │   ├── error.hpp             # (已现代化)
@@ -2041,9 +2041,9 @@ matiec-cmake/
 │   ├── semantic/
 │   ├── codegen/
 │   └── compiler/
-├── stage1_2/                 # Flex/Bison (保留结构)
-├── stage3/                   # 逐步迁移到 src/semantic
-├── stage4/                   # 逐步迁移到 src/codegen
+├── src/stage1_2/             # Flex/Bison (保留结构)
+├── src/stage3/               # 逐步迁移到 src/semantic
+├── src/stage4/               # 逐步迁移到 src/codegen
 └── tests/
     ├── unit/
     │   ├── ast/

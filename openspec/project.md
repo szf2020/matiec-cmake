@@ -20,9 +20,9 @@ standard runtime library.
 - Avoid repository-wide formatting; limit formatting to touched code
 
 ### Architecture Patterns
-- Compiler pipeline by stages: stage1_2 (Flex/Bison), stage3 (semantics),
-  stage4 (code generation)
-- AST in absyntax/absyntax_utils; runtime and IEC library in lib/
+- Compiler pipeline by stages: src/stage1_2 (Flex/Bison), src/stage3 (semantics),
+  src/stage4 (code generation)
+- AST in src/absyntax and src/absyntax_utils; runtime and IEC library in src/lib/
 
 ### Testing Strategy
 - Tests are built with MATIEC_BUILD_TESTS and run via CTest
@@ -35,7 +35,7 @@ standard runtime library.
 
 ## Domain Context
 - IEC 61131-3 compiler for PLC languages (ST/IL/SFC; FBD/LD partial)
-- Outputs ANSI C plus runtime support from lib/; ships iec2c/iec2iec tools
+- Outputs ANSI C plus runtime support from src/lib/; ships iec2c/iec2iec tools
 
 ## Important Constraints
 - Cross-platform support (Windows/Linux/macOS) and portable toolchains

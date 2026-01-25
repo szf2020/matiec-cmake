@@ -30,7 +30,7 @@ namespace matiec::test {
 [[nodiscard]] std::filesystem::path getProjectRoot();
 
 /**
- * @brief Get the path to the lib/ directory (IEC standard library)
+ * @brief Get the path to the src/lib/ directory (IEC standard library)
  */
 [[nodiscard]] std::filesystem::path getLibDir();
 

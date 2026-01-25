@@ -24,6 +24,8 @@ add_library(absyntax_utils STATIC
 
 target_include_directories(absyntax_utils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
 )
 
 target_link_libraries(absyntax_utils PUBLIC absyntax)

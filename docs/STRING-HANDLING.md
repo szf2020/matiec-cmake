@@ -7,15 +7,15 @@
 - 依赖固定长度缓冲区的路径/临时文件实现（平台差异/截断）
 
 非目标：
-- 不修改 IEC 运行时库（`lib/C/*`）里 `STR_MAX_LEN` 等字符串类型语义。
+- 不修改 IEC 运行时库（`src/lib/C/*`）里 `STR_MAX_LEN` 等字符串类型语义。
 
 ## 1. 现状：三类字符串来源
 
 ### 1.1 Token/标识符等：来自 lexer/parser
-阶段 `stage1_2`（Flex/Bison）会产生大量 token 文本（标识符、字面量、文件名等）。
+阶段 `src/stage1_2`（Flex/Bison）会产生大量 token 文本（标识符、字面量、文件名等）。
 
 当前策略：
-- lexer 会把部分 token 文本放入 `matiec::cstr_pool_*`（见 `absyntax/ast_memory.cc`），并在一次编译结束时统一 `cstr_pool_clear()`。
+- lexer 会把部分 token 文本放入 `matiec::cstr_pool_*`（见 `src/absyntax/ast_memory.cc`），并在一次编译结束时统一 `cstr_pool_clear()`。
 - Bison 的 `%union` 仍以 `char*` 承载 token 值（例如 `yylval.ID`），便于与历史代码兼容。
 
 约束：
@@ -41,7 +41,7 @@
 2) 严禁：把可能为 NULL 的 `const char*` 直接隐式转换为 `std::string_view`。
 
 推荐用法：
-- 统一使用 `matiec::sv_or_empty(const char*)`（见 `include/matiec/string_utils.hpp`）把 NULL 转为空 view，再进入 `string_view` 世界。
+- 统一使用 `matiec::sv_or_empty(const char*)`（见 `src/include/matiec/string_utils.hpp`）把 NULL 转为空 view，再进入 `string_view` 世界。
 
 ## 3. 大小写无关比较：统一入口
 
@@ -70,4 +70,3 @@
 2) 修复明显的 comparator 误用（把 less-than 当 equals 的位置）
 3) 再做路径/临时文件封装，减少平台差异
 4) 最后再评估是否要把 Bison `%union` 从 `char*` 升级为 `std::string/std::string_view`（风险高，需单独 issue）
-

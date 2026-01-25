@@ -42,7 +42,10 @@ endif()
 
 # Include directories
 target_include_directories(stage1_2
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/include
     PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 )
 

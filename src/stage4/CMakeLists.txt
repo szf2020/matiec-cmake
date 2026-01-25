@@ -4,7 +4,8 @@
 add_library(stage4_base OBJECT stage4.cc)
 target_include_directories(stage4_base PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/absyntax
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_SOURCE_DIR}
 )
 
@@ -16,7 +17,8 @@ add_library(stage4_c STATIC
 target_include_directories(stage4_c PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/generate_c
-    ${CMAKE_SOURCE_DIR}/absyntax
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(stage4_c PUBLIC absyntax)
@@ -30,7 +32,8 @@ add_library(stage4_iec STATIC
 target_include_directories(stage4_iec PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/generate_iec
-    ${CMAKE_SOURCE_DIR}/absyntax
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(stage4_iec PUBLIC absyntax)
@@ -53,7 +56,8 @@ target_compile_definitions(stage4_iec_alt PRIVATE
 target_include_directories(stage4_iec_alt PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/generate_iec
-    ${CMAKE_SOURCE_DIR}/absyntax
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(stage4_iec_alt PUBLIC absyntax)

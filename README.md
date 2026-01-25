@@ -115,7 +115,7 @@ FetchContent_MakeAvailable(matiec)
 #### vcpkg
 
 ```bash
-vcpkg install matiec --overlay-ports=./vcpkg-port
+vcpkg install matiec --overlay-ports=./tools/vcpkg-port
 ```
 
 See [docs/INTEGRATION.md](docs/INTEGRATION.md) for detailed integration guide.
@@ -134,17 +134,26 @@ When included as a subdirectory:
 
 ```
 matiec-cmake/
-├── absyntax/          # Abstract syntax tree definitions
-├── absyntax_utils/    # AST utilities
-├── stage1_2/          # Lexer (Flex) & Parser (Bison)
-├── stage3/            # Semantic analysis
-├── stage4/
-│   ├── generate_c/    # C code generator (iec2c)
-│   └── generate_iec/  # IEC normalizer (iec2iec)
-├── lib/               # IEC 61131-3 standard library
-│   ├── C/             # C runtime headers
-│   └── *.txt          # IEC library definitions
-└── docs/              # Documentation
+├── src/
+│   ├── absyntax/          # Abstract syntax tree definitions
+│   ├── absyntax_utils/    # AST utilities
+│   ├── stage1_2/          # Lexer (Flex) & Parser (Bison)
+│   ├── stage3/            # Semantic analysis
+│   ├── stage4/
+│   │   ├── generate_c/    # C code generator (iec2c)
+│   │   └── generate_iec/  # IEC normalizer (iec2iec)
+│   ├── lib/               # IEC 61131-3 standard library
+│   │   ├── C/             # C runtime headers
+│   │   └── *.txt          # IEC library definitions
+│   └── include/           # Public headers
+├── docs/                  # Documentation
+├── cmake/                 # CMake modules
+├── config/                # Config templates
+├── tests/                 # Tests
+├── tools/                 # Tooling and ports
+│   ├── vcpkg-port/
+│   └── issues/
+└── openspec/              # OpenSpec specs/changes
 ```
 
 ### Supported IEC 61131-3 Languages
@@ -266,7 +275,7 @@ FetchContent_MakeAvailable(matiec)
 #### vcpkg
 
 ```bash
-vcpkg install matiec --overlay-ports=./vcpkg-port
+vcpkg install matiec --overlay-ports=./tools/vcpkg-port
 ```
 
 详细集成指南请参阅 [docs/INTEGRATION.md](docs/INTEGRATION.md)。
@@ -285,17 +294,26 @@ vcpkg install matiec --overlay-ports=./vcpkg-port
 
 ```
 matiec-cmake/
-├── absyntax/          # 抽象语法树定义
-├── absyntax_utils/    # AST 工具库
-├── stage1_2/          # 词法分析器 (Flex) & 语法分析器 (Bison)
-├── stage3/            # 语义分析
-├── stage4/
-│   ├── generate_c/    # C 代码生成器 (iec2c)
-│   └── generate_iec/  # IEC 规范化器 (iec2iec)
-├── lib/               # IEC 61131-3 标准库
-│   ├── C/             # C 运行时头文件
-│   └── *.txt          # IEC 库定义
-└── docs/              # 文档
+├── src/
+│   ├── absyntax/          # 抽象语法树定义
+│   ├── absyntax_utils/    # AST 工具库
+│   ├── stage1_2/          # 词法分析器 (Flex) & 语法分析器 (Bison)
+│   ├── stage3/            # 语义分析
+│   ├── stage4/
+│   │   ├── generate_c/    # C 代码生成器 (iec2c)
+│   │   └── generate_iec/  # IEC 规范化器 (iec2iec)
+│   ├── lib/               # IEC 61131-3 标准库
+│   │   ├── C/             # C 运行时头文件
+│   │   └── *.txt          # IEC 库定义
+│   └── include/           # 公共头文件
+├── docs/                  # 文档
+├── cmake/                 # CMake 模块
+├── config/                # 配置模板
+├── tests/                 # 测试
+├── tools/                 # 工具与端口
+│   ├── vcpkg-port/
+│   └── issues/
+└── openspec/              # OpenSpec 规范/变更
 ```
 
 ### 支持的 IEC 61131-3 语言

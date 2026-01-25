@@ -166,7 +166,8 @@ configure_file(
 # Include directories
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
 # ==============================================================================
 # Common infrastructure: modern error reporter (shared by tools + library)
@@ -176,16 +177,17 @@ add_library(matiec_error STATIC
 )
 target_include_directories(matiec_error PUBLIC
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 
 # Add subdirectories for internal libraries
-add_subdirectory(absyntax)
-add_subdirectory(absyntax_utils)
-add_subdirectory(stage1_2)
-add_subdirectory(stage3)
-add_subdirectory(stage4)
+add_subdirectory(src/absyntax)
+add_subdirectory(src/absyntax_utils)
+add_subdirectory(src/stage1_2)
+add_subdirectory(src/stage3)
+add_subdirectory(src/stage4)
 
 # ==============================================================================
 # Library: libmatiec
@@ -215,10 +217,11 @@ if(MATIEC_BUILD_STATIC)
     add_library(matiec_static STATIC ${MATIEC_LIB_SOURCES})
     target_include_directories(matiec_static
         PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
             ${CMAKE_SOURCE_DIR}
+            ${CMAKE_SOURCE_DIR}/src
             ${CMAKE_BINARY_DIR}
     )
     target_link_libraries(matiec_static
@@ -251,10 +254,11 @@ if(MATIEC_BUILD_SHARED)
     target_compile_definitions(matiec_shared PRIVATE MATIEC_BUILDING_DLL)
     target_include_directories(matiec_shared
         PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
             ${CMAKE_SOURCE_DIR}
+            ${CMAKE_SOURCE_DIR}/src
             ${CMAKE_BINARY_DIR}
     )
     target_link_libraries(matiec_shared PRIVATE ${MATIEC_CORE_LIBS} matiec_error)
@@ -281,14 +285,18 @@ endif()
 
 if(MATIEC_BUILD_TOOLS)
     # Tool sources
-    set(TOOL_SOURCES main.cc)
+    set(TOOL_SOURCES src/main.cc)
     if(WIN32)
-        list(APPEND TOOL_SOURCES util/getopt_compat.c)
+        list(APPEND TOOL_SOURCES src/util/getopt_compat.c)
     endif()
 
     # Executable: iec2c (IEC 61131-3 to C)
     add_executable(iec2c ${TOOL_SOURCES})
-    target_include_directories(iec2c PRIVATE ${CMAKE_SOURCE_DIR})
+    target_include_directories(iec2c PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/include
+    )
     target_link_libraries(iec2c PRIVATE
         stage1_2
         stage3
@@ -299,7 +307,11 @@ if(MATIEC_BUILD_TOOLS)
 
     # Executable: iec2iec (IEC 61131-3 normalizer)
     add_executable(iec2iec ${TOOL_SOURCES})
-    target_include_directories(iec2iec PRIVATE ${CMAKE_SOURCE_DIR})
+    target_include_directories(iec2iec PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/include
+    )
     target_link_libraries(iec2iec PRIVATE
         stage1_2
         stage3
@@ -329,8 +341,8 @@ matiec_enable_clang_tidy(iec2iec)
 
 if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     # Being used as a subdirectory - export variables to parent scope
-    set(MATIEC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib PARENT_SCOPE)
-    set(MATIEC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
+    set(MATIEC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/lib PARENT_SCOPE)
+    set(MATIEC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/include PARENT_SCOPE)
 
     if(MATIEC_BUILD_TOOLS)
         set(MATIEC_IEC2C_EXECUTABLE $<TARGET_FILE:iec2c> PARENT_SCOPE)
@@ -368,12 +380,12 @@ if(MATIEC_INSTALL)
     endif()
 
     # Install headers
-    install(DIRECTORY include/matiec
+    install(DIRECTORY src/include/matiec
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
     # Install IEC standard library
-    install(DIRECTORY lib/
+    install(DIRECTORY src/lib/
         DESTINATION ${CMAKE_INSTALL_DATADIR}/matiec/lib
         FILES_MATCHING
         PATTERN "*.txt"

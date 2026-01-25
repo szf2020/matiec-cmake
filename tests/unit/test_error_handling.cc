@@ -191,7 +191,7 @@ TEST(TestUtilsStandaloneTest, GetLibDir) {
                 break;
             }
         }
-        EXPECT_TRUE(has_iec_files) << "lib/ directory should contain .txt or .h files";
+        EXPECT_TRUE(has_iec_files) << "src/lib/ directory should contain .txt or .h files";
     }
 }
 

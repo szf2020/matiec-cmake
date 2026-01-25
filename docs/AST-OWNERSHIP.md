@@ -9,7 +9,7 @@
 - `symbol_c` 重载了 `operator new/delete`，把每次 `new` 分配的指针登记到全局集合里（heap tracking）。
 - 目的：在编译结束时可以“统一释放本次编译产生的所有 heap AST 节点”，而无需逐类实现复杂的递归析构。
 
-关键实现：`absyntax/ast_memory.cc`。
+关键实现：`src/absyntax/ast_memory.cc`。
 
 ### 1.2 lexer/parser 产生的 C 字符串池（token/文件名）
 历史代码大量使用 `const char*`/`char*` 保存 token 值和文件名，这些字符串需要在一次编译过程中保持稳定地址。
@@ -74,4 +74,3 @@ pin 会让对象跨编译存活，带来：
 - Windows：`ctest --test-dir build-vs -C Release --output-on-failure`
 - WSL（ASan+LSan）：`ASAN_OPTIONS=detect_leaks=1 ctest --test-dir build-wsl-asan --output-on-failure`
 - CI：关注 `linux-x64-sanitizers`（含 LeakSanitizer 门禁）
-

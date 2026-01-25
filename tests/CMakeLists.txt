@@ -9,7 +9,8 @@ add_library(matiec_test_utils STATIC
 target_include_directories(matiec_test_utils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(matiec_test_utils PUBLIC
@@ -28,7 +29,8 @@ add_executable(test_matiec_api
 target_include_directories(test_matiec_api PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_matiec_api PRIVATE
@@ -49,7 +51,8 @@ add_executable(test_error_handling
 target_include_directories(test_error_handling PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_error_handling PRIVATE
@@ -70,7 +73,8 @@ add_executable(test_string_utils
 target_include_directories(test_string_utils PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_string_utils PRIVATE
@@ -91,7 +95,8 @@ add_executable(test_visitor_result
 target_include_directories(test_visitor_result PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_visitor_result PRIVATE
@@ -112,7 +117,8 @@ add_executable(test_compilation_unit
 target_include_directories(test_compilation_unit PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_compilation_unit PRIVATE
@@ -133,7 +139,8 @@ add_executable(test_ast_modern
 target_include_directories(test_ast_modern PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_ast_modern PRIVATE
@@ -154,7 +161,8 @@ add_executable(test_type_registry
 target_include_directories(test_type_registry PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_type_registry PRIVATE
@@ -175,7 +183,8 @@ add_executable(test_type_inferrer
 target_include_directories(test_type_inferrer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_type_inferrer PRIVATE
@@ -196,7 +205,8 @@ add_executable(test_semantic_candidates
 target_include_directories(test_semantic_candidates PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_semantic_candidates PRIVATE
@@ -217,7 +227,8 @@ add_executable(test_constant_folding
 target_include_directories(test_constant_folding PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_constant_folding PRIVATE
@@ -238,7 +249,8 @@ add_executable(test_codegen_emitter
 target_include_directories(test_codegen_emitter PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_codegen_emitter PRIVATE
@@ -263,7 +275,8 @@ add_executable(test_e2e_compile
 target_include_directories(test_e2e_compile PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_e2e_compile PRIVATE
@@ -285,7 +298,8 @@ add_executable(test_syntax_validation
 target_include_directories(test_syntax_validation PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_syntax_validation PRIVATE
@@ -307,7 +321,8 @@ add_executable(test_codegen_regression
 target_include_directories(test_codegen_regression PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
     ${CMAKE_BINARY_DIR}
 )
 target_link_libraries(test_codegen_regression PRIVATE

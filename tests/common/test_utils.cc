@@ -38,8 +38,8 @@ std::filesystem::path getProjectRoot() {
 
     // First, check if current directory is already project root
     if (fs::exists(current / "CMakeLists.txt") &&
-        fs::exists(current / "lib") &&
-        fs::exists(current / "lib" / "iec_std_lib.txt")) {
+        fs::exists(current / "src" / "lib") &&
+        fs::exists(current / "src" / "lib" / "iec_std_lib.txt")) {
         return current;
     }
 
@@ -47,8 +47,8 @@ std::filesystem::path getProjectRoot() {
     fs::path search = current;
     while (!search.empty() && search != search.root_path()) {
         if (fs::exists(search / "CMakeLists.txt") &&
-            fs::exists(search / "lib") &&
-            fs::exists(search / "lib" / "iec_std_lib.txt")) {
+            fs::exists(search / "src" / "lib") &&
+            fs::exists(search / "src" / "lib" / "iec_std_lib.txt")) {
             return search;
         }
         search = search.parent_path();
@@ -56,7 +56,7 @@ std::filesystem::path getProjectRoot() {
 
     // Try checking if we're in a build subdirectory
     if (fs::exists(current.parent_path() / "CMakeLists.txt") &&
-        fs::exists(current.parent_path() / "lib")) {
+        fs::exists(current.parent_path() / "src" / "lib")) {
         return current.parent_path();
     }
 
@@ -65,7 +65,7 @@ std::filesystem::path getProjectRoot() {
 }
 
 std::filesystem::path getLibDir() {
-    return getProjectRoot() / "lib";
+    return getProjectRoot() / "src" / "lib";
 }
 
 std::filesystem::path createTempDir() {

@@ -19,6 +19,8 @@ add_library(stage3 STATIC
 
 target_include_directories(stage3 PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
 )
 
 target_link_libraries(stage3 PUBLIC absyntax absyntax_utils)

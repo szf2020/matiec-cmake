@@ -26,7 +26,7 @@ vcpkg_copy_tools(
 )
 
 # Install the IEC standard library files
-file(INSTALL "${SOURCE_PATH}/lib/"
+file(INSTALL "${SOURCE_PATH}/src/lib/"
     DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib"
     FILES_MATCHING
     PATTERN "*.txt"

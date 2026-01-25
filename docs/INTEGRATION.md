@@ -246,9 +246,9 @@ cmake --install build
 
 ### Using Custom Port (Overlay)
 
-Create the following files in your project:
+The repository provides an overlay under `tools/vcpkg-port/`. Use or customize the following files:
 
-**`vcpkg-ports/matiec/portfile.cmake`**:
+**`tools/vcpkg-port/portfile.cmake`**:
 ```cmake
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
@@ -266,14 +266,14 @@ vcpkg_cmake_install()
 
 vcpkg_copy_tools(TOOL_NAMES iec2c iec2iec AUTO_CLEAN)
 
-file(INSTALL "${SOURCE_PATH}/lib/"
+file(INSTALL "${SOURCE_PATH}/src/lib/"
     DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib"
     FILES_MATCHING PATTERN "*.txt" PATTERN "*.h")
 
 vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
 ```
 
-**`vcpkg-ports/matiec/vcpkg.json`**:
+**`tools/vcpkg-port/vcpkg.json`**:
 ```json
 {
     "name": "matiec",
@@ -290,7 +290,7 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
 
 Install with:
 ```bash
-vcpkg install matiec --overlay-ports=./vcpkg-ports
+vcpkg install matiec --overlay-ports=./tools/vcpkg-port
 ```
 
 ---

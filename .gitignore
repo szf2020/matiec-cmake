@@ -64,9 +64,9 @@ iec2iec
 /LOCATED_VARIABLES.h
 /VARIABLES.csv
 
-stage1_2/iec_bison.cc
-stage1_2/iec_bison.h*
-stage1_2/iec_flex.cc
+src/stage1_2/iec_bison.cc
+src/stage1_2/iec_bison.h*
+src/stage1_2/iec_flex.cc
 config/config.h
 !config/config.h.in
 test/**
