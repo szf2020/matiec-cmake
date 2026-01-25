@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>matiec</id>
+    <version>0.0.0</version>
+    <authors>lusipad</authors>
+    <owners>lusipad</owners>
+    <license type="expression">GPL-3.0-only</license>
+    <projectUrl>https://github.com/lusipad/matiec-cmake</projectUrl>
+    <repository type="git" url="https://github.com/lusipad/matiec-cmake.git" />
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>IEC 61131-3 compiler (matiec) converting PLC code (ST/IL/SFC) to ANSI C.</description>
+    <summary>IEC 61131-3 compiler packaged with tools and standard library.</summary>
+    <tags>IEC61131-3 PLC compiler matiec ST IL SFC cmake</tags>
+  </metadata>
+  <files>
+    <file src="tools/**" target="tools" />
+    <file src="lib/**" target="lib" />
+    <file src="build/**" target="build" />
+    <file src="docs/**" target="docs" />
+  </files>
+</package>
