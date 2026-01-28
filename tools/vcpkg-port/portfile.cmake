@@ -42,6 +42,10 @@ vcpkg_cmake_build()
 
 vcpkg_cmake_install()
 
+# Remove duplicate debug artifacts to satisfy vcpkg post-build checks.
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
+
 # Copy executables to tools directory
 vcpkg_copy_tools(
     TOOL_NAMES iec2c iec2iec
