@@ -248,7 +248,7 @@ jobs:
   publish-nuget:
     needs: nuget
     runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/v') && secrets.NUGET_API_KEY != ''
+    if: startsWith(github.ref, 'refs/tags/v')
     name: Publish NuGet
 
     steps:
@@ -261,7 +261,24 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
+      - name: Check NuGet API key
+        id: nuget-key
+        shell: pwsh
+        run: |
+          if ("${{ secrets.NUGET_API_KEY }}" -eq "") {
+            "has_key=false" >> $env:GITHUB_OUTPUT
+          } else {
+            "has_key=true" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Skip publish (missing API key)
+        if: steps.nuget-key.outputs.has_key != 'true'
+        shell: pwsh
+        run: |
+          Write-Host "NUGET_API_KEY 未配置，跳过 NuGet 发布。"
+
       - name: Publish to NuGet.org
+        if: steps.nuget-key.outputs.has_key == 'true'
         run: |
           nuget push nupkg/*.nupkg -Source https://api.nuget.org/v3/index.json -ApiKey ${{ secrets.NUGET_API_KEY }} -SkipDuplicate
 
