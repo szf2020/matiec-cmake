@@ -6,13 +6,36 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO lusipad/matiec-cmake
-    REF master                   # Replace with version tag
-    SHA512 0                     # Update with: vcpkg hash <archive-url>
+    REF 17dc930dd6a43857dc787bd196ae734d86da4eff
+    SHA512 E4AEC26509F2C6820A69839CB8033BF27DDE6F02BE670FB212B1AADC6D167A0ADE771407508E20AD70D1277B687636093308846085C262FB938668724AC6C0B3
     HEAD_REF master
 )
 
+vcpkg_find_acquire_program(BISON)
+vcpkg_find_acquire_program(FLEX)
+
+get_filename_component(BISON_DIR "${BISON}" DIRECTORY)
+get_filename_component(FLEX_DIR "${FLEX}" DIRECTORY)
+vcpkg_add_to_path("${BISON_DIR}")
+vcpkg_add_to_path("${FLEX_DIR}")
+
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
+    set(MATIEC_BUILD_SHARED OFF)
+    set(MATIEC_BUILD_STATIC ON)
+else()
+    set(MATIEC_BUILD_SHARED ON)
+    set(MATIEC_BUILD_STATIC OFF)
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
+    OPTIONS
+        "-DBISON_EXECUTABLE=${BISON}"
+        "-DFLEX_EXECUTABLE=${FLEX}"
+        "-DMATIEC_BUILD_TESTS=OFF"
+        "-DMATIEC_BUILD_TOOLS=ON"
+        "-DMATIEC_BUILD_SHARED=${MATIEC_BUILD_SHARED}"
+        "-DMATIEC_BUILD_STATIC=${MATIEC_BUILD_STATIC}"
 )
 
 vcpkg_cmake_build()

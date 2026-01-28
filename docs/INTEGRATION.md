@@ -293,6 +293,24 @@ Install with:
 vcpkg install matiec --overlay-ports=./tools/vcpkg-port
 ```
 
+### Official vcpkg PR automation (release tags)
+
+This repository includes a release workflow that updates the port in the fork
+`lusipad/vcpkg` and opens a PR to `microsoft/vcpkg` when a tag `vX.Y.Z` is pushed.
+Tags containing `-` are treated as pre-releases and are skipped.
+
+Prerequisites:
+1. Ensure the fork exists: `https://github.com/lusipad/vcpkg`
+2. Create a token for automation:
+   - Preferred: **Classic PAT** with scope `public_repo` (allows creating PRs to public repos)
+   - Fine-grained PAT only works if you can select `microsoft/vcpkg`, which is often not possible
+3. Add the token to this repo as `VCPKG_PR_TOKEN`
+
+Release steps:
+1. Create and push a tag `vX.Y.Z`
+2. The workflow generates port updates, runs `vcpkg x-add-version`, tests
+   `vcpkg install matiec --triplet x64-linux`, and opens the PR
+
 ---
 
 ## Method 5: Git Submodule

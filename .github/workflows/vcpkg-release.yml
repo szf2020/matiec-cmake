@@ -1,0 +1,193 @@
+name: Publish vcpkg port PR
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  VCPKG_FORK: lusipad/vcpkg
+  VCPKG_FORK_OWNER: lusipad
+  VCPKG_UPSTREAM: microsoft/vcpkg
+  VCPKG_UPSTREAM_BRANCH: master
+  PORT_NAME: matiec
+
+jobs:
+  vcpkg-pr:
+    if: "!contains(github.ref_name, '-')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check token
+        env:
+          VCPKG_PR_TOKEN: ${{ secrets.VCPKG_PR_TOKEN }}
+        run: |
+          if [ -z "${VCPKG_PR_TOKEN}" ]; then
+            echo "::error::Missing required secret VCPKG_PR_TOKEN"
+            exit 1
+          fi
+
+      - name: Prepare variables
+        id: vars
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          BRANCH="matiec-update-${TAG}"
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
+
+      - name: Clone vcpkg fork
+        run: |
+          set -euo pipefail
+          git clone "https://github.com/${VCPKG_FORK}.git" vcpkg
+          cd vcpkg
+          git remote add upstream "https://github.com/${VCPKG_UPSTREAM}.git"
+          git fetch upstream "${VCPKG_UPSTREAM_BRANCH}"
+          git checkout -B "${{ steps.vars.outputs.branch }}" "upstream/${VCPKG_UPSTREAM_BRANCH}"
+
+      - name: Update port files
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.vars.outputs.tag }}"
+          VERSION="${{ steps.vars.outputs.version }}"
+          ARCHIVE_URL="https://github.com/lusipad/matiec-cmake/archive/refs/tags/${TAG}.tar.gz"
+          curl -L "${ARCHIVE_URL}" -o /tmp/matiec.tar.gz
+          SHA512="$(sha512sum /tmp/matiec.tar.gz | awk '{print toupper($1)}')"
+
+          PORT_DIR="vcpkg/ports/${PORT_NAME}"
+          mkdir -p "${PORT_DIR}"
+
+          cat > "${PORT_DIR}/portfile.cmake" <<EOF
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO lusipad/matiec-cmake
+    REF ${TAG}
+    SHA512 ${SHA512}
+    HEAD_REF master
+)
+
+vcpkg_find_acquire_program(BISON)
+vcpkg_find_acquire_program(FLEX)
+
+get_filename_component(BISON_DIR "\${BISON}" DIRECTORY)
+get_filename_component(FLEX_DIR "\${FLEX}" DIRECTORY)
+vcpkg_add_to_path("\${BISON_DIR}")
+vcpkg_add_to_path("\${FLEX_DIR}")
+
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
+    set(MATIEC_BUILD_SHARED OFF)
+    set(MATIEC_BUILD_STATIC ON)
+else()
+    set(MATIEC_BUILD_SHARED ON)
+    set(MATIEC_BUILD_STATIC OFF)
+endif()
+
+vcpkg_cmake_configure(
+    SOURCE_PATH "\${SOURCE_PATH}"
+    OPTIONS
+        "-DBISON_EXECUTABLE=\${BISON}"
+        "-DFLEX_EXECUTABLE=\${FLEX}"
+        "-DMATIEC_BUILD_TESTS=OFF"
+        "-DMATIEC_BUILD_TOOLS=ON"
+        "-DMATIEC_BUILD_SHARED=\${MATIEC_BUILD_SHARED}"
+        "-DMATIEC_BUILD_STATIC=\${MATIEC_BUILD_STATIC}"
+)
+
+vcpkg_cmake_build()
+vcpkg_cmake_install()
+
+vcpkg_copy_tools(
+    TOOL_NAMES iec2c iec2iec
+    AUTO_CLEAN
+)
+
+file(INSTALL "\${SOURCE_PATH}/src/lib/"
+    DESTINATION "\${CURRENT_PACKAGES_DIR}/share/\${PORT}/lib"
+    FILES_MATCHING
+    PATTERN "*.txt"
+    PATTERN "*.h"
+)
+
+vcpkg_install_copyright(FILE_LIST "\${SOURCE_PATH}/COPYING")
+EOF
+
+          cat > "${PORT_DIR}/vcpkg.json" <<EOF
+{
+  "name": "matiec",
+  "version-semver": "${VERSION}",
+  "description": "IEC 61131-3 compiler - converts IEC 61131-3 code (ST/IL/SFC) to ANSI C",
+  "homepage": "https://github.com/lusipad/matiec-cmake",
+  "license": "GPL-3.0-only",
+  "supports": "!uwp",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    }
+  ]
+}
+EOF
+
+      - name: Bootstrap vcpkg
+        run: |
+          set -euo pipefail
+          cd vcpkg
+          ./bootstrap-vcpkg.sh
+
+      - name: Update versions metadata
+        run: |
+          set -euo pipefail
+          cd vcpkg
+          ./vcpkg x-add-version "${PORT_NAME}"
+
+      - name: Test build
+        run: |
+          set -euo pipefail
+          cd vcpkg
+          ./vcpkg install "${PORT_NAME}" --triplet x64-linux
+
+      - name: Commit and push
+        id: commit
+        env:
+          VCPKG_PR_TOKEN: ${{ secrets.VCPKG_PR_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd vcpkg
+          git add "ports/${PORT_NAME}" versions
+          if git diff --cached --quiet; then
+            echo "changes=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "${PORT_NAME}: update to ${{ steps.vars.outputs.tag }}"
+          git remote set-url origin "https://x-access-token:${VCPKG_PR_TOKEN}@github.com/${VCPKG_FORK}.git"
+          git push origin "${{ steps.vars.outputs.branch }}"
+          echo "changes=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Create PR
+        if: steps.commit.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.VCPKG_PR_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR_TITLE="${PORT_NAME}: update to ${{ steps.vars.outputs.tag }}"
+          PR_BODY="Updates matiec to ${{ steps.vars.outputs.tag }}.\n\nTest: ./vcpkg install ${PORT_NAME} --triplet x64-linux"
+          EXISTING="$(gh pr list --repo "${VCPKG_UPSTREAM}" --head "${VCPKG_FORK_OWNER}:${{ steps.vars.outputs.branch }}" --json number --jq '.[0].number')"
+          if [ -n "${EXISTING}" ]; then
+            echo "PR already exists: #${EXISTING}"
+            exit 0
+          fi
+          gh pr create \
+            --repo "${VCPKG_UPSTREAM}" \
+            --title "${PR_TITLE}" \
+            --body "${PR_BODY}" \
+            --head "${VCPKG_FORK_OWNER}:${{ steps.vars.outputs.branch }}" \
+            --base "${VCPKG_UPSTREAM_BRANCH}"
