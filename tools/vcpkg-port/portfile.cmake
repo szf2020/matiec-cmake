@@ -53,8 +53,9 @@ vcpkg_copy_tools(
 )
 
 # Install the IEC standard library files
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib")
 file(INSTALL "${SOURCE_PATH}/src/lib/"
-    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/iec-lib"
     FILES_MATCHING
     PATTERN "*.txt"
     PATTERN "*.h"
@@ -67,11 +68,11 @@ matiec provides the iec2c and iec2iec command-line tools.
 The tools are installed to: ${CURRENT_INSTALLED_DIR}/tools/matiec/
 
 IEC standard library files are installed to:
-  ${CURRENT_INSTALLED_DIR}/share/matiec/lib/
+  ${CURRENT_INSTALLED_DIR}/share/matiec/iec-lib/
 
 Example CMake usage:
   find_program(IEC2C_EXECUTABLE iec2c HINTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/matiec")
-  set(MATIEC_LIB_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/matiec/lib")
+  set(MATIEC_LIB_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/matiec/iec-lib")
 
   add_custom_command(
       OUTPUT ${CMAKE_BINARY_DIR}/generated/program.c
@@ -80,4 +81,7 @@ Example CMake usage:
   )
 ]])
 
-vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
+vcpkg_install_copyright(FILE_LIST
+    "${SOURCE_PATH}/COPYING"
+    "${SOURCE_PATH}/src/lib/COPYING.LESSER"
+)

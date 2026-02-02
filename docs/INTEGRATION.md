@@ -267,10 +267,13 @@ vcpkg_cmake_install()
 vcpkg_copy_tools(TOOL_NAMES iec2c iec2iec AUTO_CLEAN)
 
 file(INSTALL "${SOURCE_PATH}/src/lib/"
-    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/iec-lib"
     FILES_MATCHING PATTERN "*.txt" PATTERN "*.h")
 
-vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
+vcpkg_install_copyright(FILE_LIST
+    "${SOURCE_PATH}/COPYING"
+    "${SOURCE_PATH}/src/lib/COPYING.LESSER"
+)
 ```
 
 **`tools/vcpkg-port/vcpkg.json`**:
@@ -280,7 +283,7 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
     "version": "0.1.0",
     "description": "IEC 61131-3 compiler - converts IEC code to C",
     "homepage": "https://github.com/lusipad/matiec-cmake",
-    "license": "GPL-3.0",
+    "license": "GPL-3.0-only AND LGPL-3.0-or-later",
     "dependencies": [
         { "name": "vcpkg-cmake", "host": true },
         { "name": "vcpkg-cmake-config", "host": true }

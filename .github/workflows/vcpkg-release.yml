@@ -110,14 +110,15 @@ jobs:
             "    AUTO_CLEAN" \
             ")" \
             "" \
+            'file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib")' \
             'file(INSTALL "${SOURCE_PATH}/src/lib/"' \
-            '    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/lib"' \
+            '    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/iec-lib"' \
             "    FILES_MATCHING" \
             '    PATTERN "*.txt"' \
             '    PATTERN "*.h"' \
             ")" \
             "" \
-            'vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")' \
+            'vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING" "${SOURCE_PATH}/src/lib/COPYING.LESSER")' \
             > "${PORT_DIR}/portfile.cmake"
 
           printf '%s\n' \
@@ -126,7 +127,7 @@ jobs:
             "  \"version-semver\": \"${VERSION}\"," \
             '  "description": "IEC 61131-3 compiler - converts IEC 61131-3 code (ST/IL/SFC) to ANSI C",' \
             '  "homepage": "https://github.com/lusipad/matiec-cmake",' \
-            '  "license": "GPL-3.0-only",' \
+            '  "license": "GPL-3.0-only AND LGPL-3.0-or-later",' \
             '  "supports": "!uwp",' \
             '  "dependencies": [' \
             '    {' \
