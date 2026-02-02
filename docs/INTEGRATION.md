@@ -247,6 +247,7 @@ cmake --install build
 ### Using Custom Port (Overlay)
 
 The repository provides an overlay under `tools/vcpkg-port/`. Use or customize the following files:
+Note: the vcpkg port installs the CLI tools and IEC standard library data only (no linkable libraries).
 
 **`tools/vcpkg-port/portfile.cmake`**:
 ```cmake

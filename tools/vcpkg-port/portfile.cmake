@@ -19,13 +19,9 @@ get_filename_component(FLEX_DIR "${FLEX}" DIRECTORY)
 vcpkg_add_to_path("${BISON_DIR}")
 vcpkg_add_to_path("${FLEX_DIR}")
 
-if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
-    set(MATIEC_BUILD_SHARED OFF)
-    set(MATIEC_BUILD_STATIC ON)
-else()
-    set(MATIEC_BUILD_SHARED ON)
-    set(MATIEC_BUILD_STATIC OFF)
-endif()
+# Tool-only port: build only CLI tools (no linkable libraries).
+set(MATIEC_BUILD_SHARED OFF)
+set(MATIEC_BUILD_STATIC OFF)
 
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
@@ -45,6 +41,8 @@ vcpkg_cmake_install()
 # Remove duplicate debug artifacts to satisfy vcpkg post-build checks.
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
+# Tool-only port: remove headers to avoid implying a linkable library.
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/include")
 
 # Copy executables to tools directory
 vcpkg_copy_tools(
@@ -64,6 +62,7 @@ file(INSTALL "${SOURCE_PATH}/src/lib/"
 # Create a usage file
 file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/usage" [[
 matiec provides the iec2c and iec2iec command-line tools.
+This port installs tools only (no linkable libraries).
 
 The tools are installed to: ${CURRENT_INSTALLED_DIR}/tools/matiec/
 
