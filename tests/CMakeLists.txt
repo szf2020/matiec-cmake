@@ -44,6 +44,28 @@ gtest_discover_tests(test_matiec_api
         LABELS "unit"
 )
 
+# Modern C++ API wrapper tests
+add_executable(test_cpp_api
+    unit/test_cpp_api.cc
+)
+target_include_directories(test_cpp_api PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/include
+    ${CMAKE_BINARY_DIR}
+)
+target_link_libraries(test_cpp_api PRIVATE
+    matiec_test_utils
+    matiec_static
+    GTest::gtest_main
+)
+gtest_discover_tests(test_cpp_api
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    PROPERTIES
+        LABELS "unit"
+)
+
 # Error handling tests (will be expanded in P1)
 add_executable(test_error_handling
     unit/test_error_handling.cc
@@ -337,6 +359,61 @@ gtest_discover_tests(test_codegen_regression
         TIMEOUT 60
 )
 
+if(MATIEC_BUILD_TOOLS)
+    # CLI v1 compatibility tests
+    add_executable(test_cli_v1
+        e2e/test_cli_v1.cc
+    )
+    target_include_directories(test_cli_v1 PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/include
+        ${CMAKE_BINARY_DIR}
+    )
+    target_compile_definitions(test_cli_v1 PRIVATE
+        MATIEC_TEST_IEC2C_PATH="$<TARGET_FILE:iec2c>"
+    )
+    target_link_libraries(test_cli_v1 PRIVATE
+        matiec_test_utils
+        GTest::gtest_main
+    )
+    gtest_discover_tests(test_cli_v1
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        PROPERTIES
+            LABELS "e2e"
+            TIMEOUT 60
+    )
+endif()
+
+# Reuse top-level target-scoped warning/definition/sanitizer settings for tests.
+set(MATIEC_TEST_TARGETS
+    matiec_test_utils
+    test_matiec_api
+    test_cpp_api
+    test_error_handling
+    test_string_utils
+    test_visitor_result
+    test_compilation_unit
+    test_ast_modern
+    test_type_registry
+    test_type_inferrer
+    test_semantic_candidates
+    test_constant_folding
+    test_codegen_emitter
+    test_e2e_compile
+    test_syntax_validation
+    test_codegen_regression
+)
+
+if(MATIEC_BUILD_TOOLS)
+    list(APPEND MATIEC_TEST_TARGETS test_cli_v1)
+endif()
+
+foreach(_test_target IN LISTS MATIEC_TEST_TARGETS)
+    matiec_apply_project_options(${_test_target})
+endforeach()
+
 # ==============================================================================
 # Test data
 # ==============================================================================
@@ -353,7 +430,7 @@ file(COPY
 
 add_custom_target(test_unit
     COMMAND ${CMAKE_CTEST_COMMAND} -L unit --output-on-failure
-    DEPENDS test_matiec_api test_error_handling test_string_utils
+    DEPENDS test_matiec_api test_cpp_api test_error_handling test_string_utils
             test_visitor_result test_compilation_unit
             test_ast_modern
             test_type_registry test_type_inferrer
@@ -370,3 +447,7 @@ add_custom_target(test_e2e
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running end-to-end tests..."
 )
+
+if(MATIEC_BUILD_TOOLS)
+    add_dependencies(test_e2e test_cli_v1)
+endif()

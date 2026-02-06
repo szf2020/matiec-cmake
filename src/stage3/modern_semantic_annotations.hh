@@ -14,6 +14,7 @@ namespace matiec::stage3 {
 
 std::shared_ptr<const types::Type> resolve_legacy_type(symbol_c *type_symbol);
 void populate_modern_annotations(symbol_c *symbol);
+void populate_modern_annotations_tree(symbol_c *root);
 
 class modern_semantic_annotations_c : public fcall_iterator_visitor_c {
 public:

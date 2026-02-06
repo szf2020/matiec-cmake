@@ -49,6 +49,12 @@ TEST(MatiecUtilsTest, VersionStringIsValid) {
     EXPECT_GE(dot_count, 2u) << "Version string should be in x.y.z format, got: " << v;
 }
 
+TEST(MatiecUtilsTest, V1ApiContractMacrosAreDefined) {
+    EXPECT_EQ(MATIEC_C_API_LEVEL, 1);
+    EXPECT_EQ(MATIEC_HAS_V1_API, 1);
+    EXPECT_EQ(MATIEC_VERSION_MAJOR, 0);
+}
+
 TEST(MatiecUtilsTest, ErrorStringReturnsValidStrings) {
     EXPECT_STREQ(matiec_error_string(MATIEC_OK), "Success");
     EXPECT_STREQ(matiec_error_string(MATIEC_ERROR_INVALID_ARG), "Invalid argument");
@@ -245,6 +251,23 @@ TEST_F(MatiecApiTest, CompileFromString) {
     );
 
     EXPECT_EQ(result, MATIEC_OK) << "Error: " << (result_.error_message ? result_.error_message : "none");
+}
+
+TEST_F(MatiecApiTest, V1EntrypointsAreBackwardCompatible) {
+    TempDir temp;
+    const auto file = temp.path() / "v1_compile.st";
+    ASSERT_TRUE(writeFile(file, samples::MINIMAL_PROGRAM));
+
+    std::string output_dir_str = temp.path().string();
+    opts_.output_dir = output_dir_str.c_str();
+
+    matiec_result_t v1_result{};
+    const auto ret = matiec_compile_file_v1(file.string().c_str(), &opts_, &v1_result);
+
+    EXPECT_EQ(ret, MATIEC_OK) << "Error: " << (v1_result.error_message ? v1_result.error_message : "none");
+    EXPECT_EQ(v1_result.error_code, MATIEC_OK);
+
+    matiec_result_free_v1(&v1_result);
 }
 
 // =============================================================================

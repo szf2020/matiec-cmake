@@ -7,6 +7,9 @@ This directory contains documentation for the matiec project.
 | File | Description |
 |------|-------------|
 | [INTEGRATION.md](INTEGRATION.md) | Guide for integrating matiec into external projects (CPM, vcpkg, FetchContent) |
+| [migration/V1_MIGRATION_GUIDE.md](migration/V1_MIGRATION_GUIDE.md) | Breaking-change migration mapping for CLI/C API/C++ API |
+| [testing/V1_BASELINE.md](testing/V1_BASELINE.md) | Frozen CLI/C API/C++ API/codegen regression baseline |
+| [release/V0_3_0_RELEASE_RUNBOOK.md](release/V0_3_0_RELEASE_RUNBOOK.md) | v0.3.0 release gate, rollback, and observation checklist |
 | [architecture/ARCHITECTURE.txt](architecture/ARCHITECTURE.txt) | Detailed architecture documentation (compiler internals) |
 | [architecture/CMAKE_MIGRATION_PLAN.md](architecture/CMAKE_MIGRATION_PLAN.md) | Historical CMake migration plan |
 

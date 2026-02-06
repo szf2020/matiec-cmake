@@ -65,9 +65,13 @@ extern "C" {
 
 /* Library version */
 #define MATIEC_VERSION_MAJOR 0
-#define MATIEC_VERSION_MINOR 1
+#define MATIEC_VERSION_MINOR 3
 #define MATIEC_VERSION_PATCH 0
-#define MATIEC_VERSION_STRING "0.1.0"
+#define MATIEC_VERSION_STRING "0.3.0"
+
+/* Stable C API contract level */
+#define MATIEC_C_API_LEVEL 1
+#define MATIEC_HAS_V1_API 1
 
 /* Export/import macros for shared library */
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -217,11 +221,36 @@ MATIEC_API matiec_error_t matiec_compile_string(
 );
 
 /**
+ * @brief v1 compile entrypoint (stable alias of matiec_compile_file)
+ */
+MATIEC_API matiec_error_t matiec_compile_file_v1(
+    const char *input_file,
+    const matiec_options_t *opts,
+    matiec_result_t *result
+);
+
+/**
+ * @brief v1 compile-string entrypoint (stable alias of matiec_compile_string)
+ */
+MATIEC_API matiec_error_t matiec_compile_string_v1(
+    const char *source,
+    size_t source_len,
+    const char *source_name,
+    const matiec_options_t *opts,
+    matiec_result_t *result
+);
+
+/**
  * @brief Free resources allocated in a result structure
  *
  * @param result    Result structure to free
  */
 MATIEC_API void matiec_result_free(matiec_result_t *result);
+
+/**
+ * @brief v1 result cleanup entrypoint (stable alias of matiec_result_free)
+ */
+MATIEC_API void matiec_result_free_v1(matiec_result_t *result);
 
 /**
  * @brief Set error callback for detailed error reporting
@@ -241,7 +270,7 @@ MATIEC_API void matiec_set_error_callback(
 /**
  * @brief Get library version string
  *
- * @return Version string (e.g., "0.1.0")
+ * @return Version string (e.g., "0.3.0")
  */
 MATIEC_API const char* matiec_version(void);
 

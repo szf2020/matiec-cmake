@@ -74,6 +74,7 @@
 #include <stdarg.h>
 #include <cstdio>
 #include <iostream>
+#include <string>
 
 
 #include "config/config.h"
@@ -92,6 +93,49 @@
    #define HGVERSION ""
 #endif
 
+namespace {
+
+constexpr const char *kShortOptions = ":nehvfplsrRabicI:T:O:";
+
+const option kLongOptions[] = {
+  {"help", no_argument, nullptr, 'h'},
+  {"version", no_argument, nullptr, 'v'},
+  {"full-token-location", no_argument, nullptr, 'f'},
+  {"allow-forward-refs", no_argument, nullptr, 'p'},
+  {"relaxed-datatype-model", no_argument, nullptr, 'l'},
+  {"safe-extensions", no_argument, nullptr, 's'},
+  {"nested-comments", no_argument, nullptr, 'n'},
+  {"ref-extensions", no_argument, nullptr, 'r'},
+  {"ref-nonstandard", no_argument, nullptr, 'R'},
+  {"nonliteral-array-size", no_argument, nullptr, 'a'},
+  {"allow-missing-var-in", no_argument, nullptr, 'i'},
+  {"allow-void-functions", no_argument, nullptr, 'b'},
+  {"disable-implicit-en-eno", no_argument, nullptr, 'e'},
+  {"conversion-functions", no_argument, nullptr, 'c'},
+  {"include", required_argument, nullptr, 'I'},
+  {"target-dir", required_argument, nullptr, 'T'},
+  {"output-options", required_argument, nullptr, 'O'},
+  {nullptr, 0, nullptr, 0}
+};
+
+[[nodiscard]] const char* current_option_arg(int argc, char **argv) {
+  if (optind > 0 && optind <= argc && argv[optind - 1] != nullptr) {
+    return argv[optind - 1];
+  }
+  return nullptr;
+}
+
+[[nodiscard]] std::string option_name_for_error(const char *raw_opt) {
+  if (raw_opt != nullptr && raw_opt[0] != '\0') {
+    return std::string(raw_opt);
+  }
+  if (optopt != '\0' && optopt != '?') {
+    return matiec::format("-%c", optopt);
+  }
+  return std::string("<unknown option>");
+}
+
+} // namespace
 
 
 void error_exit(const char *file_name, int line_no, const char *errmsg, ...) {
@@ -109,22 +153,24 @@ void error_exit(const char *file_name, int line_no, const char *errmsg, ...) {
 
 static void printusage(const char *cmd) {
   printf("\nsyntax: %s [<options>] [-O <output_options>] [-I <include_directory>] [-T <target_directory>] <input_file>\n", cmd);
-  printf(" -h : show this help message\n");
-  printf(" -v : print version number\n");  
-  printf(" -f : display full token location on error messages\n");
-  printf(" -p : allow use of forward references                (a non-standard extension?)\n");  
-  printf(" -l : use a relaxed datatype equivalence model       (a non-standard extension?)\n");  
-  printf(" -s : allow use of safe datatypes (SAFEBOOL, etc.)   (defined in PLCOpen Safety)\n"); // PLCopen TC5 "Safety Software Technical Specification - Part 1" v1.0
-  printf(" -n : allow use of nested comments                   (an IEC 61131-3 v3 feature)\n");
-  printf(" -r : allow use of references (REF_TO, REF, ^, NULL) (an IEC 61131-3 v3 feature)\n");
-  printf(" -R : allow use of REF_TO ANY datatypes              (a non-standard extension!)\n");
-  printf("        as well as REF_TO in ARRAYs and STRUCTs      (a non-standard extension!)\n");
-  printf(" -a : allow use of non-literals in array size limits (a non-standard extension!)\n");
-  printf(" -i : allow POUs with no in out and inout parameters (a non-standard extension!)\n");
-  printf(" -b : allow functions returning VOID                 (a non-standard extension!)\n");
-  printf(" -e : disable generation of implicit EN and ENO parameters.\n");
-  printf(" -c : create conversion functions for enumerated data types\n");
-  printf(" -O : options for output (code generation) stage. Available options for %s are...\n", cmd);
+  printf(" -h, --help                     : show this help message\n");
+  printf(" -v, --version                  : print version number\n");
+  printf(" -f, --full-token-location      : display full token location on error messages\n");
+  printf(" -p, --allow-forward-refs       : allow use of forward references                (a non-standard extension?)\n");
+  printf(" -l, --relaxed-datatype-model   : use a relaxed datatype equivalence model       (a non-standard extension?)\n");
+  printf(" -s, --safe-extensions          : allow use of safe datatypes (SAFEBOOL, etc.)   (defined in PLCOpen Safety)\n"); // PLCopen TC5 "Safety Software Technical Specification - Part 1" v1.0
+  printf(" -n, --nested-comments          : allow use of nested comments                   (an IEC 61131-3 v3 feature)\n");
+  printf(" -r, --ref-extensions           : allow use of references (REF_TO, REF, ^, NULL) (an IEC 61131-3 v3 feature)\n");
+  printf(" -R, --ref-nonstandard          : allow use of REF_TO ANY datatypes              (a non-standard extension!)\n");
+  printf("                                : as well as REF_TO in ARRAYs and STRUCTs        (a non-standard extension!)\n");
+  printf(" -a, --nonliteral-array-size    : allow use of non-literals in array size limits (a non-standard extension!)\n");
+  printf(" -i, --allow-missing-var-in     : allow POUs with no in out and inout parameters (a non-standard extension!)\n");
+  printf(" -b, --allow-void-functions     : allow functions returning VOID                  (a non-standard extension!)\n");
+  printf(" -e, --disable-implicit-en-eno  : disable generation of implicit EN and ENO parameters.\n");
+  printf(" -c, --conversion-functions     : create conversion functions for enumerated data types\n");
+  printf(" -I, --include <dir>            : include directory for imported files\n");
+  printf(" -T, --target-dir <dir>         : target directory for generated files\n");
+  printf(" -O, --output-options <opts>    : options for output (code generation) stage. Available options for %s are...\n", cmd);
   runtime_options.allow_missing_var_in    = false; /* disable: allow definition and invocation of POUs with no input, output and in_out parameters! */
   stage4_print_options();
   printf("\n");
@@ -164,7 +210,7 @@ int main(int argc, char **argv) {
   /******************************************/
   /*   Parse command line options...        */
   /******************************************/
-  while ((optres = getopt(argc, argv, ":nehvfplsrRabicI:T:O:")) != -1) {
+  while ((optres = getopt_long(argc, argv, kShortOptions, kLongOptions, nullptr)) != -1) {
     switch(optres) {
     case 'h':
       printusage(argv[0]);
@@ -206,7 +252,9 @@ int main(int argc, char **argv) {
       break;
     case ':':       /* -I, -T, or -O without operand */
       {
-        std::string msg = matiec::format("Option -%c requires an operand", optopt);
+        const char *raw_opt = current_option_arg(argc, argv);
+        const std::string opt_name = option_name_for_error(raw_opt);
+        std::string msg = matiec::format("Option %s requires an operand", opt_name.c_str());
         matiec::globalErrorReporter().report(
             matiec::ErrorSeverity::Error,
             matiec::ErrorCategory::IO,
@@ -217,7 +265,9 @@ int main(int argc, char **argv) {
       break;
     case '?':
       {
-        std::string msg = matiec::format("Unrecognized option: -%c", optopt);
+        const char *raw_opt = current_option_arg(argc, argv);
+        const std::string opt_name = option_name_for_error(raw_opt);
+        std::string msg = matiec::format("Unrecognized option: %s", opt_name.c_str());
         matiec::globalErrorReporter().report(
             matiec::ErrorSeverity::Error,
             matiec::ErrorCategory::IO,

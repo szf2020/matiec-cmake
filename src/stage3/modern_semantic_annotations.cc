@@ -158,6 +158,14 @@ void populate_modern_annotations(symbol_c *symbol) {
     }
 }
 
+void populate_modern_annotations_tree(symbol_c *root) {
+    if (!root) {
+        return;
+    }
+    modern_semantic_annotations_c visitor;
+    root->accept(visitor);
+}
+
 void modern_semantic_annotations_c::prefix_fcall(symbol_c *symbol) {
     populate_modern_annotations(symbol);
 }

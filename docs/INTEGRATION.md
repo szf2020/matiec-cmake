@@ -91,7 +91,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
     NAME matiec
     GITHUB_REPOSITORY lusipad/matiec-cmake
-    GIT_TAG v0.1.0
+    GIT_TAG v0.3.0
 )
 
 add_executable(my_app main.c)
@@ -123,9 +123,29 @@ target_compile_definitions(my_app PRIVATE
 | `matiec_options_init()` | Initialize options to defaults |
 | `matiec_compile_file()` | Compile from file |
 | `matiec_compile_string()` | Compile from string |
+| `matiec_compile_file_v1()` | Stable v1 alias for `matiec_compile_file()` |
+| `matiec_compile_string_v1()` | Stable v1 alias for `matiec_compile_string()` |
 | `matiec_result_free()` | Free result resources |
+| `matiec_result_free_v1()` | Stable v1 alias for `matiec_result_free()` |
 | `matiec_version()` | Get library version |
 | `matiec_error_string()` | Get error description |
+
+#### C++ Wrapper API (`matiec/matiec.hpp`)
+
+```cpp
+#include <matiec/matiec.hpp>
+
+matiec::CompilerOptions options;
+options.includeDir = MATIEC_LIB_DIR;
+options.outputDir = "./out";
+
+matiec::Compiler compiler(options);
+auto result = compiler.compileFile("program.st");
+if (!result.ok()) {
+    std::fprintf(stderr, "compile failed: %s
+", result.diagnostic.message.c_str());
+}
+```
 
 #### Compiler Options
 
@@ -281,7 +301,7 @@ vcpkg_install_copyright(FILE_LIST
 ```json
 {
     "name": "matiec",
-    "version": "0.1.0",
+    "version": "0.3.0",
     "description": "IEC 61131-3 compiler - converts IEC code to C",
     "homepage": "https://github.com/lusipad/matiec-cmake",
     "license": "GPL-3.0-only AND LGPL-3.0-or-later",
@@ -385,7 +405,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
     NAME matiec
     GITHUB_REPOSITORY lusipad/matiec-cmake
-    GIT_TAG v0.1.0
+    GIT_TAG v0.3.0
 )
 
 # Your PLC compiler frontend using the library API

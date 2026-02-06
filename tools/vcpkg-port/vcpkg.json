@@ -1,6 +1,6 @@
 {
     "name": "matiec",
-    "version-semver": "0.1.0",
+    "version-semver": "0.3.0",
     "description": "IEC 61131-3 compiler - converts IEC 61131-3 code (ST/IL/SFC) to ANSI C",
     "homepage": "https://github.com/lusipad/matiec-cmake",
     "license": "GPL-3.0-only AND LGPL-3.0-or-later",

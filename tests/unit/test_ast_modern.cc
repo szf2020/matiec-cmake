@@ -7,7 +7,6 @@
 #include <gtest/gtest.h>
 
 #include "matiec/ast/generated/ast_nodes.gen.hpp"
-#include "matiec/ast/legacy_compat.hpp"
 #include "matiec/ast/visitor.hpp"
 
 namespace {
@@ -15,18 +14,6 @@ namespace {
 struct StringVisitor final : public matiec::ast::Visitor {
     [[nodiscard]] matiec::ast::VisitorResult visit(matiec::ast::identifier_c& /*symbol*/) override {
         return std::string("ok");
-    }
-};
-
-struct LegacyEchoVisitor final : public matiec::ast::legacy::visitor_c {
-    void* visit(matiec::ast::legacy::symbol_c* symbol) override {
-        return symbol;
-    }
-};
-
-struct SymbolVisitor final : public matiec::ast::Visitor {
-    [[nodiscard]] matiec::ast::VisitorResult visit(matiec::ast::identifier_c& symbol) override {
-        return &symbol;
     }
 };
 
@@ -42,6 +29,18 @@ TEST(ModernAstTest, ListSetsParentOnInsert) {
     EXPECT_EQ(raw->parent(), &list);
 }
 
+TEST(ModernAstTest, ListRemoveClearsParent) {
+    matiec::ast::library_c list;
+    auto child = std::make_unique<matiec::ast::identifier_c>("foo");
+    matiec::ast::Symbol* raw = child.get();
+    list.add(std::move(child));
+
+    auto removed = list.remove(0);
+
+    ASSERT_NE(removed, nullptr);
+    EXPECT_EQ(raw->parent(), nullptr);
+}
+
 TEST(ModernAstTest, VisitorDispatchReturnsTypedResult) {
     matiec::ast::identifier_c ident("name");
     StringVisitor visitor;
@@ -51,25 +50,4 @@ TEST(ModernAstTest, VisitorDispatchReturnsTypedResult) {
 
     ASSERT_TRUE(value.has_value());
     EXPECT_EQ(*value, "ok");
-}
-
-TEST(ModernAstTest, LegacyAdapterBridgesToModernVisitor) {
-    matiec::ast::identifier_c ident("name");
-    LegacyEchoVisitor legacy;
-    matiec::ast::legacy::adapter adapter(legacy);
-
-    const auto result = ident.accept(adapter);
-    const auto value = matiec::ast::get_result<matiec::ast::Symbol*>(result);
-
-    ASSERT_TRUE(value.has_value());
-    EXPECT_EQ(*value, &ident);
-}
-
-TEST(ModernAstTest, ModernAdapterBridgesToLegacyInterface) {
-    matiec::ast::identifier_c ident("name");
-    SymbolVisitor visitor;
-    matiec::ast::legacy::modern_adapter adapter(visitor);
-
-    void* result = adapter.visit(static_cast<matiec::ast::legacy::symbol_c*>(&ident));
-    EXPECT_EQ(result, &ident);
 }

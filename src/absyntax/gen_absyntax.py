@@ -794,6 +794,7 @@ def main() -> int:
     ap.add_argument("--input", type=Path, default=Path(__file__).with_name("absyntax.def"))
     ap.add_argument("--out-dir", type=Path, default=Path(__file__).with_name("generated"))
     ap.add_argument("--modern-out-dir", type=Path, default=None)
+    ap.add_argument("--emit-legacy-adapters", action="store_true")
     args = ap.parse_args()
 
     text = args.input.read_text(encoding="utf-8", errors="strict")
@@ -829,12 +830,13 @@ def main() -> int:
         (modern_dir / "visitor_methods_decl.gen.hpp").write_text(
             generate_modern_visitor_methods(entries), encoding="utf-8", newline="\n"
         )
-        (modern_dir / "legacy_visitor_methods.gen.hpp").write_text(
-            generate_legacy_visitor_methods(entries), encoding="utf-8", newline="\n"
-        )
-        (modern_dir / "legacy_adapter_methods.gen.hpp").write_text(
-            generate_legacy_adapter_methods(entries), encoding="utf-8", newline="\n"
-        )
+        if args.emit_legacy_adapters:
+            (modern_dir / "legacy_visitor_methods.gen.hpp").write_text(
+                generate_legacy_visitor_methods(entries), encoding="utf-8", newline="\n"
+            )
+            (modern_dir / "legacy_adapter_methods.gen.hpp").write_text(
+                generate_legacy_adapter_methods(entries), encoding="utf-8", newline="\n"
+            )
 
     return 0
 

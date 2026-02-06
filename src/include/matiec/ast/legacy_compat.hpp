@@ -5,6 +5,10 @@
 #ifndef MATIEC_AST_LEGACY_COMPAT_HPP
 #define MATIEC_AST_LEGACY_COMPAT_HPP
 
+#ifndef MATIEC_ENABLE_LEGACY_AST_COMPAT
+#error "legacy_compat.hpp has been removed from the default build. Define MATIEC_ENABLE_LEGACY_AST_COMPAT to opt in temporarily."
+#endif
+
 #include <variant>
 
 #include "matiec/ast/visitor.hpp"

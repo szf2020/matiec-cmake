@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "matiec/string_utils.hpp"
+#include "../stage4_emitter.hh"
 
 
 
@@ -97,6 +98,7 @@ class generate_c_base_c: public iterator_visitor_c {
 
   protected:
     stage4out_c &s4o;
+    matiec::codegen::CodeEmitter emitter;
 
   private:
     /* Unlike programs that are mapped onto C++ classes, Function Blocks are mapped onto a data structure type
@@ -109,7 +111,9 @@ class generate_c_base_c: public iterator_visitor_c {
     const char *variable_prefix_;
 
   public:
-    generate_c_base_c(stage4out_c *s4o_ptr): s4o(*s4o_ptr) {
+    generate_c_base_c(stage4out_c *s4o_ptr)
+      : s4o(*s4o_ptr),
+        emitter(matiec::codegen::make_stage4_emitter(s4o)) {
       variable_prefix_ = NULL;
     }
     ~generate_c_base_c(void) {}
@@ -712,6 +716,17 @@ void *visit(symbolic_variable_c *symbol) {
 // a non-standard extension!!
 void *visit(symbolic_constant_c *symbol) {
   TRACE("symbolic_variable_c");
+  if (symbol->const_value_modern.isValid()) {
+    if (const auto *value = std::get_if<int64_t>(&symbol->const_value_modern.value)) {
+      emitter.write(std::to_string(*value));
+      return NULL;
+    }
+    if (const auto *value = std::get_if<uint64_t>(&symbol->const_value_modern.value)) {
+      emitter.write(std::to_string(*value));
+      return NULL;
+    }
+  }
+
   if      (symbol->const_value.m_int64.is_valid()) s4o.print(symbol->const_value.m_int64.get());
   else if (symbol->const_value.m_uint64.is_valid()) s4o.print(symbol->const_value.m_uint64.get());
   else ERROR;

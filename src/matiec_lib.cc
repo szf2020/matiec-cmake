@@ -622,6 +622,28 @@ MATIEC_API matiec_error_t matiec_compile_string(
     return ret;
 }
 
+MATIEC_API matiec_error_t matiec_compile_file_v1(
+    const char *input_file,
+    const matiec_options_t *opts,
+    matiec_result_t *result
+) {
+    return matiec_compile_file(input_file, opts, result);
+}
+
+MATIEC_API matiec_error_t matiec_compile_string_v1(
+    const char *source,
+    size_t source_len,
+    const char *source_name,
+    const matiec_options_t *opts,
+    matiec_result_t *result
+) {
+    return matiec_compile_string(source, source_len, source_name, opts, result);
+}
+
+MATIEC_API void matiec_result_free_v1(matiec_result_t *result) {
+    matiec_result_free(result);
+}
+
 MATIEC_API void matiec_result_free(matiec_result_t *result) {
     if (!result) return;
 

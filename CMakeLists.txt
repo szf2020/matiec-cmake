@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(matiec VERSION 0.1.0 LANGUAGES CXX C)
+project(matiec VERSION 0.3.0 LANGUAGES CXX C)
 
 # Options
 option(MATIEC_BUILD_SHARED "Build shared library" ON)
@@ -9,6 +9,7 @@ option(MATIEC_BUILD_TESTS "Build unit and integration tests" OFF)
 option(MATIEC_INSTALL "Generate install targets" ON)
 option(MATIEC_ENABLE_CLANG_TIDY "Enable clang-tidy analysis on matiec targets (optional)" OFF)
 option(MATIEC_ENABLE_SANITIZERS "Enable Address/Undefined sanitizers (optional)" OFF)
+option(MATIEC_ENABLE_LEGACY_AST_COMPAT "Temporarily enable legacy AST compatibility adapters" OFF)
 
 # C++ standard - C++17 for std::optional, std::string_view, etc.
 set(CMAKE_CXX_STANDARD 17)
@@ -48,27 +49,46 @@ endif()
 find_package(BISON 2.4 REQUIRED)
 find_package(FLEX REQUIRED)
 
-# Compiler-specific options
+# Compiler-specific options (target-scoped)
+set(MATIEC_COMMON_COMPILE_OPTIONS)
+set(MATIEC_COMMON_COMPILE_DEFINITIONS)
+set(MATIEC_SANITIZER_COMPILE_OPTIONS)
+set(MATIEC_SANITIZER_LINK_OPTIONS)
+set(MATIEC_SANITIZER_SUPPORTED OFF)
+set(MATIEC_GIT_COMPILE_DEFINITION "")
+
+if(MATIEC_ENABLE_LEGACY_AST_COMPAT)
+    list(APPEND MATIEC_COMMON_COMPILE_DEFINITIONS MATIEC_ENABLE_LEGACY_AST_COMPAT=1)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Clang (including clang-cl on Windows and AppleClang on macOS)
-    add_compile_options(-Wall -Wpointer-arith -Wwrite-strings -Wno-unused)
-    # Disable warnings that are errors in older code
-    add_compile_options(-Wno-overloaded-virtual -Wno-deprecated-register)
-    # Disable C++11 literal suffix warning (code uses old-style PRId64 macros)
-    add_compile_options(-Wno-reserved-user-defined-literal)
+    list(APPEND MATIEC_COMMON_COMPILE_OPTIONS
+        -Wall
+        -Wpointer-arith
+        -Wwrite-strings
+        -Wno-unused
+        # Disable warnings that are errors in older code
+        -Wno-overloaded-virtual
+        -Wno-deprecated-register
+        # Disable C++11 literal suffix warning (code uses old-style PRId64 macros)
+        -Wno-reserved-user-defined-literal
+    )
     if(WIN32)
-        add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+        list(APPEND MATIEC_COMMON_COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS)
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # GCC
-    add_compile_options(-Wall -Wpointer-arith -Wwrite-strings -Wno-unused)
+    list(APPEND MATIEC_COMMON_COMPILE_OPTIONS -Wall -Wpointer-arith -Wwrite-strings -Wno-unused)
 elseif(MSVC)
     # MSVC (fallback support)
-    add_compile_options(/W3)
-    # Make source/execution character set explicit on Windows to avoid codepage
-    # warnings (e.g. C4819) and keep diagnostics reproducible across locales.
-    add_compile_options(/utf-8)
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    list(APPEND MATIEC_COMMON_COMPILE_OPTIONS
+        /W3
+        # Make source/execution character set explicit on Windows to avoid
+        # codepage warnings (e.g. C4819) and keep diagnostics reproducible.
+        /utf-8
+    )
+    list(APPEND MATIEC_COMMON_COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS)
 endif()
 
 # Optional: sanitizers (ASan/UBSan)
@@ -78,12 +98,42 @@ if(MATIEC_ENABLE_SANITIZERS)
         message(WARNING "MATIEC_ENABLE_SANITIZERS=ON is not supported with MSVC/clang-cl; ignoring.")
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         message(STATUS "Enabling sanitizers (address,undefined)")
-        add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
-        add_link_options(-fsanitize=address,undefined)
+        set(MATIEC_SANITIZER_SUPPORTED ON)
+        list(APPEND MATIEC_SANITIZER_COMPILE_OPTIONS -fsanitize=address,undefined -fno-omit-frame-pointer)
+        list(APPEND MATIEC_SANITIZER_LINK_OPTIONS -fsanitize=address,undefined)
     else()
         message(WARNING "MATIEC_ENABLE_SANITIZERS=ON but unsupported compiler '${CMAKE_CXX_COMPILER_ID}'; ignoring.")
     endif()
 endif()
+
+function(matiec_apply_project_options target_name)
+    if(NOT TARGET ${target_name})
+        return()
+    endif()
+
+    if(MATIEC_COMMON_COMPILE_OPTIONS)
+        target_compile_options(${target_name} PRIVATE ${MATIEC_COMMON_COMPILE_OPTIONS})
+    endif()
+
+    if(MATIEC_COMMON_COMPILE_DEFINITIONS)
+        target_compile_definitions(${target_name} PRIVATE ${MATIEC_COMMON_COMPILE_DEFINITIONS})
+    endif()
+
+    if(MATIEC_GIT_COMPILE_DEFINITION)
+        target_compile_definitions(${target_name} PRIVATE ${MATIEC_GIT_COMPILE_DEFINITION})
+    endif()
+
+    if(MATIEC_SANITIZER_SUPPORTED)
+        target_compile_options(${target_name} PRIVATE ${MATIEC_SANITIZER_COMPILE_OPTIONS})
+
+        get_target_property(_target_type ${target_name} TYPE)
+        if(_target_type STREQUAL "EXECUTABLE"
+            OR _target_type STREQUAL "SHARED_LIBRARY"
+            OR _target_type STREQUAL "MODULE_LIBRARY")
+            target_link_options(${target_name} PRIVATE ${MATIEC_SANITIZER_LINK_OPTIONS})
+        endif()
+    endif()
+endfunction()
 
 # Optional: clang-tidy (static analysis)
 # Keep default OFF to avoid toolchain coupling; enable explicitly when needed.
@@ -113,7 +163,7 @@ if(GIT_FOUND)
         ERROR_QUIET
     )
     if(GIT_VERSION)
-        add_compile_definitions(HGVERSION="${GIT_VERSION}")
+        set(MATIEC_GIT_COMPILE_DEFINITION HGVERSION="${GIT_VERSION}")
     endif()
 endif()
 
@@ -162,12 +212,6 @@ configure_file(
     ${CMAKE_BINARY_DIR}/config/config.h
     @ONLY
 )
-
-# Include directories
-include_directories(${CMAKE_BINARY_DIR})
-include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
 # ==============================================================================
 # Common infrastructure: modern error reporter (shared by tools + library)
@@ -296,6 +340,7 @@ if(MATIEC_BUILD_TOOLS)
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/include
+        ${CMAKE_BINARY_DIR}
     )
     target_link_libraries(iec2c PRIVATE
         stage1_2
@@ -311,6 +356,7 @@ if(MATIEC_BUILD_TOOLS)
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/include
+        ${CMAKE_BINARY_DIR}
     )
     target_link_libraries(iec2iec PRIVATE
         stage1_2
@@ -321,19 +367,28 @@ if(MATIEC_BUILD_TOOLS)
     )
 endif()
 
-# Apply clang-tidy to matiec targets only (avoid third-party code like GoogleTest).
-matiec_enable_clang_tidy(matiec_error)
-matiec_enable_clang_tidy(absyntax)
-matiec_enable_clang_tidy(absyntax_utils)
-matiec_enable_clang_tidy(stage1_2)
-matiec_enable_clang_tidy(stage3)
-matiec_enable_clang_tidy(stage4_c)
-matiec_enable_clang_tidy(stage4_iec)
-matiec_enable_clang_tidy(stage4_iec_alt)
-matiec_enable_clang_tidy(matiec_static)
-matiec_enable_clang_tidy(matiec_shared)
-matiec_enable_clang_tidy(iec2c)
-matiec_enable_clang_tidy(iec2iec)
+# Apply project-wide compile options + clang-tidy to matiec targets only
+# (avoid third-party code like GoogleTest).
+set(MATIEC_LOCAL_TARGETS
+    matiec_error
+    absyntax
+    absyntax_utils
+    stage1_2
+    stage3
+    stage4_base
+    stage4_c
+    stage4_iec
+    stage4_iec_alt
+    matiec_static
+    matiec_shared
+    iec2c
+    iec2iec
+)
+
+foreach(_target_name IN LISTS MATIEC_LOCAL_TARGETS)
+    matiec_apply_project_options(${_target_name})
+    matiec_enable_clang_tidy(${_target_name})
+endforeach()
 
 # ==============================================================================
 # Export targets for external usage (CPM, FetchContent, add_subdirectory)
@@ -432,6 +487,7 @@ message(STATUS "  Build static library: ${MATIEC_BUILD_STATIC}")
 message(STATUS "  Build tools: ${MATIEC_BUILD_TOOLS}")
 message(STATUS "  Build tests: ${MATIEC_BUILD_TESTS}")
 message(STATUS "  Clang-tidy: ${MATIEC_ENABLE_CLANG_TIDY}")
+message(STATUS "  Legacy AST compat: ${MATIEC_ENABLE_LEGACY_AST_COMPAT}")
 if(GIT_VERSION)
     message(STATUS "  Git version: ${GIT_VERSION}")
 endif()

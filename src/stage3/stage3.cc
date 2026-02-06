@@ -105,8 +105,6 @@ static int type_safety(symbol_c *tree_root){
 	tree_root->accept(print_datatypes_error);
 	forced_narrow_candidate_datatypes_c forced_narrow_candidate_datatypes(tree_root);
 	tree_root->accept(forced_narrow_candidate_datatypes);
-	matiec::stage3::modern_semantic_annotations_c modern_semantic_annotations;
-	tree_root->accept(modern_semantic_annotations);
 	return print_datatypes_error.get_error_count();
 }
 
@@ -169,6 +167,12 @@ int stage3(symbol_c *tree_root, symbol_c **ordered_tree_root) {
 	error_count += array_range_check(tree_root);
 	error_count += case_elements_check(tree_root);
 	error_count += remove_forward_dependencies(tree_root, ordered_tree_root);
+
+	symbol_c *semantic_root = tree_root;
+	if (ordered_tree_root != NULL && *ordered_tree_root != NULL) {
+		semantic_root = *ordered_tree_root;
+	}
+	matiec::stage3::populate_modern_annotations_tree(semantic_root);
 
 	if (error_count > 0) {
 		fprintf(stderr, "%d error(s) found. Bailing out!\n", error_count);

@@ -11,7 +11,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License">
-  <img src="https://img.shields.io/badge/C%2B%2B-11-brightgreen.svg" alt="C++ Standard">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-brightgreen.svg" alt="C++ Standard">
   <img src="https://img.shields.io/badge/CMake-3.16+-orange.svg" alt="CMake">
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg" alt="Platform">
 </p>
@@ -69,16 +69,16 @@ cmake --build build
 
 | Option | Description |
 |--------|-------------|
-| `-I <dir>` | Include directory for libraries |
-| `-T <dir>` | Target directory for output |
-| `-h` | Display help |
-| `-v` | Display version |
-| `-f` | Display full token location |
-| `-p` | Allow forward references |
-| `-l` | Relaxed datatype equivalence |
-| `-s` | Enable SAFE datatypes (PLCopen Safety) |
-| `-n` | Allow nested comments |
-| `-r` | Enable REF_TO, REF, ^, NULL extensions |
+| `-I, --include <dir>` | Include directory for libraries |
+| `-T, --target-dir <dir>` | Target directory for output |
+| `-h, --help` | Display help |
+| `-v, --version` | Display version |
+| `-f, --full-token-location` | Display full token location |
+| `-p, --allow-forward-refs` | Allow forward references |
+| `-l, --relaxed-datatype-model` | Relaxed datatype equivalence |
+| `-s, --safe-extensions` | Enable SAFE datatypes (PLCopen Safety) |
+| `-n, --nested-comments` | Allow nested comments |
+| `-r, --ref-extensions` | Enable REF_TO, REF, ^, NULL extensions |
 
 ### Integration
 
@@ -118,7 +118,7 @@ FetchContent_MakeAvailable(matiec)
 vcpkg install matiec --overlay-ports=./tools/vcpkg-port
 ```
 
-See [docs/INTEGRATION.md](docs/INTEGRATION.md) for detailed integration guide.
+See [docs/INTEGRATION.md](docs/INTEGRATION.md) for detailed integration guide and [docs/migration/V1_MIGRATION_GUIDE.md](docs/migration/V1_MIGRATION_GUIDE.md) for breaking-change migration details.
 
 ### Exported CMake Variables
 
@@ -229,16 +229,16 @@ cmake --build build
 
 | 选项 | 说明 |
 |------|------|
-| `-I <目录>` | 库文件包含目录 |
-| `-T <目录>` | 输出目标目录 |
-| `-h` | 显示帮助 |
-| `-v` | 显示版本 |
-| `-f` | 显示完整的标记位置 |
-| `-p` | 允许前向引用 |
-| `-l` | 宽松的数据类型等价模型 |
-| `-s` | 启用 SAFE 数据类型（PLCopen Safety） |
-| `-n` | 允许嵌套注释 |
-| `-r` | 启用 REF_TO、REF、^、NULL 扩展 |
+| `-I, --include <目录>` | 库文件包含目录 |
+| `-T, --target-dir <目录>` | 输出目标目录 |
+| `-h, --help` | 显示帮助 |
+| `-v, --version` | 显示版本 |
+| `-f, --full-token-location` | 显示完整的标记位置 |
+| `-p, --allow-forward-refs` | 允许前向引用 |
+| `-l, --relaxed-datatype-model` | 宽松的数据类型等价模型 |
+| `-s, --safe-extensions` | 启用 SAFE 数据类型（PLCopen Safety） |
+| `-n, --nested-comments` | 允许嵌套注释 |
+| `-r, --ref-extensions` | 启用 REF_TO、REF、^、NULL 扩展 |
 
 ### 集成到您的项目
 
@@ -278,7 +278,7 @@ FetchContent_MakeAvailable(matiec)
 vcpkg install matiec --overlay-ports=./tools/vcpkg-port
 ```
 
-详细集成指南请参阅 [docs/INTEGRATION.md](docs/INTEGRATION.md)。
+详细集成指南请参阅 [docs/INTEGRATION.md](docs/INTEGRATION.md)，破坏性升级迁移说明请参阅 [docs/migration/V1_MIGRATION_GUIDE.md](docs/migration/V1_MIGRATION_GUIDE.md)。
 
 ### 导出的 CMake 变量
 
